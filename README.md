@@ -11,8 +11,10 @@
 
 ```
 name,space_id,color
-RGB Magenta,0,FFFF0000FFFF
-CMYK Magenta,2,FFFF0000FFFFFFFF
+RGB Magenta 16-bit,0,FF00FF
+RGB Magenta 32-bit,0,FFFF0000FFFF
+CMYK Magenta 16-bit,2,FF00FFFF
+CMYK Magenta 32-bit,2,FFFF0000FFFFFFFF
 75% Gray,8,1D4C
 ```
 
@@ -20,12 +22,12 @@ CMYK Magenta,2,FFFF0000FFFFFFFF
 
 Supported color spaces
 
-| ID | Name       |
-|:--:|:----------:|
-| 0  | RGB        |
-| 1  | HSB        |
-| 2  | CMYK       |
-| 8  | Grayscale  |
+| ID | Name       | Color information                                                                  |
+|:--:|:----------:|:-----------------------------------------------------------------------------------|
+| 0  | RGB        | Supports 16 and 32 bit channels, so accordingly 6 or 12 bytes of color information |
+| 1  | HSB        | Supports 16 and 32 bit channels, so accordingly 6 or 12 bytes of color information |
+| 2  | CMYK       | Supports 16 and 32 bit channels, so accordingly 8 or 16 bytes of color information |
+| 8  | Grayscale  | Supports 16 and 32 bit channel, so accordingly 2 or 4 bytes of color information   |
 
 NOT supported color spaces
 
