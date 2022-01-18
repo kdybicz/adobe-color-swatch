@@ -10,9 +10,33 @@
 `.csv` file is using simple, arbitrary format:
 
 ```
-color_name,color_space_id,color_space_name,component_1,component_2,component_3,component_4
-95% Gray,8,Grayscale,9500,0,0,0
+name,space_id,color
+RGB Magenta,0,FFFF0000FFFF
+CMYK Magenta,2,FFFF0000FFFFFFFF
+75% Gray,8,1D4C
 ```
+
+### Color space IDs
+
+Supported color spaces
+
+| ID | Name       |
+|:--:|:----------:|
+| 0  | RGB        |
+| 1  | HSB        |
+| 2  | CMYK       |
+| 8  | Grayscale  |
+
+NOT supported color spaces
+
+| ID | Name                     |
+|:--:|:------------------------:|
+| 3  | Pantone matching system  |
+| 4  | Focoltone colour system  |
+| 5  | Trumatch color           |
+| 6  | Toyo 88 colorfinder 1050 |
+| 7  | Lab                      |
+| 10 | HKS colors               |
 
 ## Usage
 

@@ -3,29 +3,69 @@
 import traceback
 import sys, getopt
 
-def id_to_colorspace(id):
-  if id == 0:
-    return "RGB"
-  elif id == 1:
-    return "HSB"
-  elif id == 2:
-    return "CMYK"
-  elif id == 3:
+def validate_color_space(color_space_id):
+  if color_space_id in [0, 1, 2, 8]:
+    return
+  elif color_space_id == 3:
     print("not supported: Pantone matching system")
-  elif id == 4:
+  elif color_space_id == 4:
     print("not supported: Focoltone colour system")
-  elif id == 5:
+  elif color_space_id == 5:
     print("not supported: Trumatch color")
-  elif id == 6:
+  elif color_space_id == 6:
     print("not supported: Toyo 88 colorfinder 1050")
-  elif id == 7:
-    return "Lab"
-  elif id == 8:
-    return "Grayscale"
-  elif id == 10:
+  elif color_space_id == 7:
+    print("not supported: Lab")
+  elif color_space_id == 10:
     print("not supported: HKS colors")
+  else:
+    print("not supported: unknown color space id:", color_space_id)
   
   sys.exit(2)
+
+def raw_color_to_hex(color_space_id, component_1, component_2, component_3, component_4):
+  if color_space_id in [0, 1]:
+    return format(component_1, '04X') + format(component_2, '04X') + format(component_3, '04X')
+  elif color_space_id == 2:
+    return format(component_1, '04X') + format(component_2, '04X') + format(component_3, '04X') + format(component_4, '04X')
+  elif color_space_id == 8:
+    return format(component_1, '04X')
+  else:
+    print("not supported: unknown color space id:", color_space_id)
+    sys.exit(2)
+
+def hex_color_to_raw(color_space_id, color_hex):
+  if color_space_id in [0, 1]:
+    if len(color_hex) == 6:
+      # * 257 to convert to 32-bit color space
+      return [int(color_hex[0:2], base=16) * 257, int(color_hex[2:4], base=16) * 257, int(color_hex[4:6], base=16) * 257, 0]
+    elif len(color_hex) == 12:
+      return [int(color_hex[0:4], base=16), int(color_hex[4:8], base=16), int(color_hex[8:12], base=16), 0]
+    else:
+      print("unsupported color format:", color_hex, len(color_hex))
+      sys.exit(2)
+  elif color_space_id == 2:
+    if len(color_hex) == 8:
+      # * 257 to convert to 32-bit color space
+      return [int(color_hex[0:2], base=16) * 257, int(color_hex[2:4], base=16) * 257, int(color_hex[4:6], base=16) * 257, int(color_hex[6:8], base=16) * 257]
+    elif len(color_hex) == 16:
+      return [int(color_hex[0:4], base=16), int(color_hex[4:8], base=16), int(color_hex[8:12], base=16), int(color_hex[12:16], base=16)]
+    else:
+      print("unsupported color format:", color_hex)
+      sys.exit(2)
+  elif color_space_id == 8:
+    if len(color_hex) == 2:
+      # * 257 to convert to 32-bit color space
+      return [int(color_hex[0:2], base=16) * 257, 0, 0, 0]
+    elif len(color_hex) == 4:
+      return [int(color_hex[0:4], base=16), 0, 0, 0]
+    else:
+      print("unsupported color format:", color_hex)
+      sys.exit(2)
+  else:
+    print("not supported: unknown color space id:", color_space_id)
+    sys.exit(2)
+
 
 def parse_aco(inputFile):
   colors = []
@@ -45,7 +85,7 @@ def parse_aco(inputFile):
 
     for x in range(color_count):
       color_space_id = int.from_bytes(file.read(2), "big")
-      color_space = id_to_colorspace(color_space_id)
+      validate_color_space(color_space_id)
 
       component_1 = int.from_bytes(file.read(2), "big")
       component_2 = int.from_bytes(file.read(2), "big")
@@ -53,7 +93,7 @@ def parse_aco(inputFile):
       component_4 = int.from_bytes(file.read(2), "big")
 
       # print(" - ID:", x)
-      # print("   Color space:", color_space)
+      # print("   Color space:", color_space_id)
       # print("  ", component_1, component_2, component_3, component_4)
 
     # Version 2
@@ -68,7 +108,7 @@ def parse_aco(inputFile):
 
     for x in range(color_count):
       color_space_id = int.from_bytes(file.read(2), "big")
-      color_space = id_to_colorspace(color_space_id)
+      validate_color_space(color_space_id)
 
       component_1 = int.from_bytes(file.read(2), "big")
       component_2 = int.from_bytes(file.read(2), "big")
@@ -76,18 +116,20 @@ def parse_aco(inputFile):
       component_4 = int.from_bytes(file.read(2), "big")
 
       name_length = int.from_bytes(file.read(4), "big")
-      name_bytes = file.read(name_length * 2 - 2)
+      name_bytes = file.read(name_length * 2 - 2) # - 2 is for omiting termination character
       name = name_bytes.decode("utf-16-be")
 
       # droping the string termination character
       file.read(2)
 
+      color_hex = raw_color_to_hex(color_space_id, component_1, component_2, component_3, component_4)
+
       print(" - ID:", x)
       print("   Color name:", name)
-      print("   Color space:", color_space)
-      print("  ", component_1, component_2, component_3, component_4)
+      print("   Color space:", color_space_id)
+      print("   Color:", color_hex)
 
-      color = [name, color_space_id, color_space, component_1, component_2, component_3, component_4]
+      color = [name, color_space_id, color_hex]
 
       colors.append(color)
 
@@ -104,7 +146,7 @@ def parse_aco(inputFile):
 def save_csv(colors_data, outputFile):
   try:
     file = open(outputFile, "w", encoding="utf-8")
-    file.write("color_name,color_space_id,color_space_name,component_1,component_2,component_3,component_4")
+    file.write("name,space_id,color")
     file.write("\n")
 
     for color_data in colors_data:
@@ -115,21 +157,9 @@ def save_csv(colors_data, outputFile):
       color_space_id = str(color_data[1])
       file.write(color_space_id)
       file.write(",")
-      color_space = color_data[2]
-      file.write(color_space)
-      file.write(",")
 
-      component_1 = str(color_data[3])
-      file.write(component_1)
-      file.write(",")
-      component_2 = str(color_data[4])
-      file.write(component_2)
-      file.write(",")
-      component_3 = str(color_data[5])
-      file.write(component_3)
-      file.write(",")
-      component_4 = str(color_data[6])
-      file.write(component_4)
+      color_hex = str(color_data[2])
+      file.write(color_hex)
       file.write("\n")
 
   except:
@@ -160,7 +190,7 @@ def parse_csv(inputFile):
     print("Parsing file")
 
     header = file.readline()
-    assert header == "color_name,color_space_id,color_space_name,component_1,component_2,component_3,component_4\n", "Invalid file header"
+    assert header == "name,space_id,color\n", "Invalid file header"
 
     color_lines = file.readlines()
 
@@ -168,24 +198,22 @@ def parse_csv(inputFile):
 
     for color_line in color_lines:
       line_elements = color_line.split(",")
-      assert len(line_elements) == 7, "Color line should contain 7 elements"
+      assert len(line_elements) == 3, "Color line should contain 3 elements"
 
       name = line_elements[0]
       assert len(name.strip()) > 0, "Color name must be provided"
 
       color_space_id = int(line_elements[1])
-      color_space = line_elements[2]
 
-      component_1 = int(line_elements[3])
-      component_2 = int(line_elements[4])
-      component_3 = int(line_elements[5])
-      component_4 = int(line_elements[6])
+      color_hex = line_elements[2].strip()
 
       print(" - Color name:", name)
-      print("   Color space:", color_space)
-      print("  ", component_1, component_2, component_3, component_4)
+      print("   Color space:", color_space_id)
+      print("   Color:", color_hex)
 
-      color = [name, color_space_id, color_space, component_1, component_2, component_3, component_4]
+      color_components = hex_color_to_raw(color_space_id, color_hex)
+
+      color = [name, color_space_id, color_components[0], color_components[1], color_components[2], color_components[3]]
 
       colors.append(color)
 
@@ -214,13 +242,13 @@ def save_aco(colors_data, outputFile):
       color_space_id = color_data[1]
       file.write(color_space_id.to_bytes(2, "big"))
 
-      component_1 = color_data[3]
+      component_1 = color_data[2]
       file.write(component_1.to_bytes(2, "big"))
-      component_2 = color_data[4]
+      component_2 = color_data[3]
       file.write(component_2.to_bytes(2, "big"))
-      component_3 = color_data[5]
+      component_3 = color_data[4]
       file.write(component_3.to_bytes(2, "big"))
-      component_4 = color_data[6]
+      component_4 = color_data[5]
       file.write(component_4.to_bytes(2, "big"))
 
     # Version 2
@@ -234,13 +262,13 @@ def save_aco(colors_data, outputFile):
       color_space_id = color_data[1]
       file.write(color_space_id.to_bytes(2, "big"))
 
-      component_1 = color_data[3]
+      component_1 = color_data[2]
       file.write(component_1.to_bytes(2, "big"))
-      component_2 = color_data[4]
+      component_2 = color_data[3]
       file.write(component_2.to_bytes(2, "big"))
-      component_3 = color_data[5]
+      component_3 = color_data[4]
       file.write(component_3.to_bytes(2, "big"))
-      component_4 = color_data[6]
+      component_4 = color_data[5]
       file.write(component_4.to_bytes(2, "big"))
 
       color_name = color_data[0]

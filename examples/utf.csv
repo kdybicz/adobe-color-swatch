@@ -1,4 +1,4 @@
-color_name,color_space_id,color_space_name,component_1,component_2,component_3,component_4
-Zażółć gęślą jaźń,1,HSB,10794,43176,58339,0
-チェリー,1,HSB,62194,60138,44975,0
-a,1,HSB,62194,0,65535,0
+name,space_id,color
+Zażółć gęślą jaźń,1,2A2AA8A8E3E3
+チェリー,1,F2F2EAEAAFAF
+a,1,F2F20000FFFF
