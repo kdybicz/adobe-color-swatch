@@ -1,40 +1,101 @@
 #!/usr/bin/env python3
 
+import argparse
+import logging
 import traceback
-import sys, getopt
+import sys
+
+parser = argparse.ArgumentParser(
+    description='Adobe Color Swatch generator and parser'
+)
+subparsers = parser.add_subparsers(help='sub-command help', dest="subCommand")
+
+# create the parser for the "extract" command
+parser_a = subparsers.add_parser('extract', help="extract help", description="Extract .aco input file to a .csv output file")
+parser_a.add_argument("-i", "--input", help="input file", type=argparse.FileType("rb"), required=True)
+parser_a.add_argument("-o", "--output", help="output file", type=argparse.FileType("w"), required=True)
+parser_a.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
+
+# create the parser for the "generate" command
+parser_b = subparsers.add_parser('generate', help='generate help', description="generate .aco output file based on .csv input file")
+parser_b.add_argument("-i", "--input", help="input file", type=argparse.FileType("r"), required=True)
+parser_b.add_argument("-o", "--output", help="output file", type=argparse.FileType("wb"), required=True)
+parser_b.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
+
+parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
+
+args = parser.parse_args()
+if args.verbose:
+  level = logging.DEBUG
+else:
+  level = logging.INFO
+
+logging.basicConfig(level=level, format='%(message)s', handlers=[])
+logger = logging.getLogger("__name__")
+
+h1 = logging.StreamHandler(sys.stdout)
+h1.setLevel(level)
+h1.addFilter(lambda record: record.levelno <= logging.INFO)
+logger.addHandler(h1)
+
+h2 = logging.StreamHandler(sys.stderr)
+h2.setLevel(logging.WARNING)
+logger.addHandler(h2)
+
+class ValidationError(Exception):
+    def __init__(self, message):
+      self.message = message
+    def __str__(self):
+      return repr(self.message)
 
 def validate_color_space(color_space_id):
   if color_space_id in [0, 1, 2, 8]:
     return
   elif color_space_id == 3:
-    print("not supported: Pantone matching system")
+    raise ValidationError("unsupported color space: Pantone matching system")
   elif color_space_id == 4:
-    print("not supported: Focoltone colour system")
+    raise ValidationError("unsupported color space: Focoltone colour system")
   elif color_space_id == 5:
-    print("not supported: Trumatch color")
+    raise ValidationError("unsupported color space: Trumatch color")
   elif color_space_id == 6:
-    print("not supported: Toyo 88 colorfinder 1050")
+    raise ValidationError("unsupported color space: Toyo 88 colorfinder 1050")
   elif color_space_id == 7:
-    print("not supported: Lab")
+    raise ValidationError("unsupported color space: Lab")
   elif color_space_id == 10:
-    print("not supported: HKS colors")
+    raise ValidationError("unsupported color space: HKS colors")
   else:
-    print("not supported: unknown color space id:", color_space_id)
-  
-  sys.exit(2)
+    raise ValidationError("unsupported color space: space id {}".format(color_space_id))
 
 def raw_color_to_hex(color_space_id, component_1, component_2, component_3, component_4):
-  if color_space_id in [0, 1]:
-    return format(component_1, '04X') + format(component_2, '04X') + format(component_3, '04X')
+  if color_space_id == 0:
+    if not 0 <= component_1 <= 65535 or not 0 <= component_2 <= 65535 or not 0 <= component_3 <= 65535 or component_4 != 0:
+      raise ValidationError("invalid RGB value: {}, {}, {}, {}".format(component_1, component_2, component_3, component_4))
+
+    return "#{0:04X}{1:04X}{2:04X}".format(component_1, component_2, component_3)
+  if color_space_id == 1:
+    if not 0 <= component_1 <= 65535 or not 0 <= component_2 <= 65535 or not 0 <= component_3 <= 65535 or component_4 != 0:
+      raise ValidationError("invalid HSB value: {}, {}, {}, {}".format(component_1, component_2, component_3, component_4))
+
+    return "#{0:04X}{1:04X}{2:04X}".format(component_1, component_2, component_3)
   elif color_space_id == 2:
-    return format(component_1, '04X') + format(component_2, '04X') + format(component_3, '04X') + format(component_4, '04X')
+    if not 0 <= component_1 <= 65535 or not 0 <= component_2 <= 65535 or not 0 <= component_3 <= 65535 or not 0 <= component_4 <= 65535:
+      raise ValidationError("invalid CMYK value: {}, {}, {}, {}".format(component_1, component_2, component_3, component_4))
+
+    return "#{0:04X}{1:04X}{2:04X}{3:04X}".format(component_1, component_2, component_3, component_4)
   elif color_space_id == 8:
-    return format(component_1, '04X')
+    if not 0 <= component_1 <= 10000 or component_2 != 0 or component_3 != 0 or component_4 != 0:
+      raise ValidationError("invalid Grayscale value: {}, {}, {}, {}".format(component_1, component_2, component_3, component_4))
+
+    return "#{0:04X}".format(component_1)
   else:
-    print("not supported: unknown color space id:", color_space_id)
-    sys.exit(2)
+    raise ValidationError("unsupported color space: space id {}".format(color_space_id))
 
 def hex_color_to_raw(color_space_id, color_hex):
+  color_hex = color_hex.lstrip('#')
+
+  if len(color_hex.strip()) == 0:
+    raise ValidationError("unsupported color format: {}".format(color_hex))
+
   if color_space_id in [0, 1]:
     if len(color_hex) == 6:
       # * 257 to convert to 32-bit color space
@@ -42,8 +103,7 @@ def hex_color_to_raw(color_space_id, color_hex):
     elif len(color_hex) == 12:
       return [int(color_hex[0:4], base=16), int(color_hex[4:8], base=16), int(color_hex[8:12], base=16), 0]
     else:
-      print("unsupported color format:", color_hex, len(color_hex))
-      sys.exit(2)
+      raise ValidationError("unsupported color format: {}".format(color_hex))
   elif color_space_id == 2:
     if len(color_hex) == 8:
       # * 257 to convert to 32-bit color space
@@ -51,37 +111,36 @@ def hex_color_to_raw(color_space_id, color_hex):
     elif len(color_hex) == 16:
       return [int(color_hex[0:4], base=16), int(color_hex[4:8], base=16), int(color_hex[8:12], base=16), int(color_hex[12:16], base=16)]
     else:
-      print("unsupported color format:", color_hex)
-      sys.exit(2)
+      raise ValidationError("unsupported color format: {}".format(color_hex))
   elif color_space_id == 8:
     if len(color_hex) == 2:
       # * 257 to convert to 32-bit color space
-      return [int(color_hex[0:2], base=16) * 257, 0, 0, 0]
+      gray = int(color_hex[0:2], base=16) * 257
     elif len(color_hex) == 4:
-      return [int(color_hex[0:4], base=16), 0, 0, 0]
+      gray = int(color_hex[0:4], base=16)
     else:
-      print("unsupported color format:", color_hex)
-      sys.exit(2)
+      raise ValidationError("unsupported color format: {}".format(color_hex))
+
+    if gray > 10000:
+      raise ValidationError("invalid grayscale value: {}".format(color_hex))
+
+    return [gray, 0, 0, 0]
   else:
-    print("not supported: unknown color space id:", color_space_id)
-    sys.exit(2)
+    raise ValidationError("unsupported color space: space id {}".format(color_space_id))
 
-
-def parse_aco(inputFile):
+def parse_aco(file):
   colors = []
 
   try:
-    file = open(inputFile, "rb")
-
     # Version 1
-    # print("")
-    # print("Parsing version 1 section")
+    logger.debug("\nParsing version 1 section")
 
     version_byte = int.from_bytes(file.read(2), "big")
-    assert version_byte == 1, "Version byte should be 1"
+    if version_byte != 1:
+      raise ValidationError("Version byte should be 1")
 
     color_count = int.from_bytes(file.read(2), "big")
-    # print("Colors found:", color_count)
+    logger.debug("Colors found: {}".format(color_count))
 
     for x in range(color_count):
       color_space_id = int.from_bytes(file.read(2), "big")
@@ -92,19 +151,19 @@ def parse_aco(inputFile):
       component_3 = int.from_bytes(file.read(2), "big")
       component_4 = int.from_bytes(file.read(2), "big")
 
-      # print(" - ID:", x)
-      # print("   Color space:", color_space_id)
-      # print("  ", component_1, component_2, component_3, component_4)
+      logger.debug(" - ID: {}".format(x))
+      logger.debug("   Color space: {}".format(color_space_id))
+      logger.debug("   Components: {} {} {} {}".format(component_1, component_2, component_3, component_4))
 
     # Version 2
-    print("")
-    print("Parsing version 2 section")
+    logger.debug("\nParsing version 2 section")
 
     version_byte = int.from_bytes(file.read(2), "big")
-    assert version_byte == 2, "Version byte should be 2"
+    if version_byte != 2:
+      raise ValidationError("Version byte should be 2")
 
     color_count = int.from_bytes(file.read(2), "big")
-    print("Colors found:", color_count)
+    logger.debug("Colors found {}:".format(color_count))
 
     for x in range(color_count):
       color_space_id = int.from_bytes(file.read(2), "big")
@@ -124,28 +183,25 @@ def parse_aco(inputFile):
 
       color_hex = raw_color_to_hex(color_space_id, component_1, component_2, component_3, component_4)
 
-      print(" - ID:", x)
-      print("   Color name:", name)
-      print("   Color space:", color_space_id)
-      print("   Color:", color_hex)
+      logger.debug(" - ID: {}".format(x))
+      logger.debug("   Color name: {}".format(name))
+      logger.debug("   Color space: {}".format(color_space_id))
+      logger.debug("   Color: {}".format(color_hex))
 
       color = [name, color_space_id, color_hex]
 
       colors.append(color)
 
-  except:
-    print("")
-    print("Error while parsing .aco file")
-    print(traceback.format_exc())
+  except ValidationError as e:
+    logger.error("\nError while parsing .aco file: {}".format(e.message))
 
   finally:
     file.close()
-  
+
   return colors
 
-def save_csv(colors_data, outputFile):
+def save_csv(colors_data, file):
   try:
-    file = open(outputFile, "w", encoding="utf-8")
     file.write("name,space_id,color")
     file.write("\n")
 
@@ -163,53 +219,50 @@ def save_csv(colors_data, outputFile):
       file.write("\n")
 
   except:
-    print("")
-    print("Error while saving .csv file")
-    print(traceback.format_exc())
+    logger.error("\nError while saving .csv file")
+    logger.error(traceback.format_exc())
 
   finally:
     file.close()
 
 def extract_aco(inputFile, outputFile):
-  print("")
-  print("")
-  print("Extracting", inputFile, "to", outputFile)
-  
+  print("\nExtracting \"{}\" to \"{}\"".format(inputFile.name, outputFile.name))
+
   colors_data = parse_aco(inputFile)
-  
+
   save_csv(colors_data, outputFile)
 
-def parse_csv(inputFile):
+def parse_csv(file):
   colors = []
 
   try:
-    file = open(inputFile, "r", encoding="utf-8")
-
     # Parse
-    print("")
-    print("Parsing file")
+    logger.debug("\nParsing file")
 
     header = file.readline()
-    assert header == "name,space_id,color\n", "Invalid file header"
+    if header != "name,space_id,color\n":
+      raise ValidationError("Invalid file header")
 
     color_lines = file.readlines()
 
-    print("Colors found:", len(color_lines))
+    logger.debug("Colors found: {}".format(len(color_lines)))
 
     for color_line in color_lines:
       line_elements = color_line.split(",")
-      assert len(line_elements) == 3, "Color line should contain 3 elements"
+      if len(line_elements) != 3:
+        raise ValidationError("Color line should contain 3 elements")
 
       name = line_elements[0]
-      assert len(name.strip()) > 0, "Color name must be provided"
+      if len(name.strip()) == 0:
+        raise ValidationError("Color name must be provided")
 
       color_space_id = int(line_elements[1])
 
       color_hex = line_elements[2].strip()
 
-      print(" - Color name:", name)
-      print("   Color space:", color_space_id)
-      print("   Color:", color_hex)
+      logger.debug(" - Color name: {}".format(name))
+      logger.debug("   Color space: {}".format(color_space_id))
+      logger.debug("   Color: {}".format(color_hex))
 
       color_components = hex_color_to_raw(color_space_id, color_hex)
 
@@ -217,20 +270,16 @@ def parse_csv(inputFile):
 
       colors.append(color)
 
-  except:
-    print("")
-    print("Error while parsing .csv file")
-    print(traceback.format_exc())
+  except ValidationError as e:
+    logger.info("\nError while parsing .csv file: {}".format(e.message) )
 
   finally:
     file.close()
-  
+
   return colors
 
-def save_aco(colors_data, outputFile):
+def save_aco(colors_data, file):
   try:
-    file = open(outputFile, "wb")
-
     # Version 1
     version = 1
     file.write(version.to_bytes(2, "big"))
@@ -281,71 +330,40 @@ def save_aco(colors_data, outputFile):
 
       termination_char = 0
       file.write(termination_char.to_bytes(2, "big"))
-  
+
   except:
-    print("")
-    print("Error while saving .aco file")
-    print(traceback.format_exc())
+    logger.error("\nError while saving .aco file")
+    logger.error(traceback.format_exc())
 
   finally:
     file.close()
 
 def generate_aco(inputFile, outputFile):
-  print("")
-  print("")
-  print("Generating", inputFile, "to", outputFile)
+  logger.info("\nGenerating \"{}\" to \"{}\"".format(inputFile.name, outputFile.name))
 
   colors_data = parse_csv(inputFile)
 
   save_aco(colors_data, outputFile)
 
-def print_help():
-    print("swatch.py --extract --input swatch.aco --output swatch.csv")
-    print("swatch.py -e -i swatch.aco -o swatch.csv")
-    print("swatch.py --generate --input swatch.csv --output swatch.aco")
-    print("swatch.py -g -i swatch.csv -o swatch.aco")
+def main():
+  extracting = args.subCommand == 'extract'
+  generating = args.subCommand == 'generate'
 
-def main(argv):
-    try:
-        opts, args = getopt.getopt(argv,"hegi:o:",["help", "extract", "generate", "input=", "output="])
-    except getopt.GetoptError:
-        print_help()
-        sys.exit(2)
-    
-    extracting = False
-    generating = False
-    inputFile = None
-    outputFile = None
+  if extracting == False and generating == False:
+    parser.print_help()
+    sys.exit(2)
 
-    for opt, arg in opts:
-        if opt in ("-h", "--help"):
-            print_help()
-            sys.exit()
-        elif opt in ("-e", "--extract"):
-          extracting = True
-        elif opt in ("-g", "--generate"):
-          generating = True
-        elif opt in ("-i", "--input"):
-          inputFile = arg
-        elif opt in ("-o", "--output"):
-          outputFile = arg
-    
-    if inputFile == None or outputFile == None:
-      print_help()
-      sys.exit(2)
-    
-    if extracting == True and generating == True:
-      print_help()
-      sys.exit(2)
-    
-    if extracting == False and generating == False:
-      print_help()
-      sys.exit(2)
+  inputFile = args.input
+  outputFile = args.output
 
+  try:
     if extracting == True:
       extract_aco(inputFile, outputFile)
     else:
       generate_aco(inputFile, outputFile)
+  except:
+    logger.critical("\nUnexpected error")
+    logger.critical(traceback.format_exc())
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+  main()

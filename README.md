@@ -11,11 +11,11 @@
 
 ```
 name,space_id,color
-RGB Magenta 16-bit,0,FF00FF
-RGB Magenta 32-bit,0,FFFF0000FFFF
-CMYK Magenta 16-bit,2,FF00FFFF
-CMYK Magenta 32-bit,2,FFFF0000FFFFFFFF
-75% Gray,8,1D4C
+RGB Magenta 16-bit,0,#FF00FF
+RGB Magenta 32-bit,0,#FFFF0000FFFF
+CMYK Magenta 16-bit,2,#FF00FFFF
+CMYK Magenta 32-bit,2,#FFFF0000FFFFFFFF
+75% Gray,8,#1D4C
 ```
 
 ### Color space IDs
@@ -45,25 +45,33 @@ NOT supported color spaces
 ### Extract `.aco`
 
 ```
-./swatch.py --extract --input swatch.aco --output swatch.csv
-```
+usage: swatch.py extract [-h] -i INPUT -o OUTPUT [-v]
 
-or
+Extract .aco input file to a .csv output file
 
-```
-./swatch.py -e -i swatch.aco -o swatch.csv
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INPUT, --input INPUT
+                        input file
+  -o OUTPUT, --output OUTPUT
+                        output file
+  -v, --verbose         increase output verbosity
 ```
 
 ### Generate `.aco`
 
 ```
-./swatch.py --generate --input swatch.csv --output swatch.aco
-```
+usage: swatch.py generate [-h] -i INPUT -o OUTPUT [-v]
 
-or
+generate .aco output file based on .csv input file
 
-```
-./swatch.py -g -i swatch.csv -o swatch.aco
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INPUT, --input INPUT
+                        input file
+  -o OUTPUT, --output OUTPUT
+                        output file
+  -v, --verbose         increase output verbosity
 ```
 
 ## Debugging

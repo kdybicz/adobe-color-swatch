@@ -1,21 +1,21 @@
 name,space_id,color
-White,8,0000
-10% Gray,8,03E8
-15% Gray,8,05DC
-20% Gray,8,07D0
-25% Gray,8,09C4
-30% Gray,8,0BB8
-35% Gray,8,0DAC
-40% Gray,8,0FA0
-45% Gray,8,1194
-50% Gray,8,1388
-55% Gray,8,157C
-60% Gray,8,1770
-65% Gray,8,1964
-70% Gray,8,1B58
-75% Gray,8,1D4C
-80% Gray,8,1F40
-85% Gray,8,2134
-90% Gray,8,2328
-95% Gray,8,251C
-Black,8,2710
+White,8,#0000
+10% Gray,8,#03E8
+15% Gray,8,#05DC
+20% Gray,8,#07D0
+25% Gray,8,#09C4
+30% Gray,8,#0BB8
+35% Gray,8,#0DAC
+40% Gray,8,#0FA0
+45% Gray,8,#1194
+50% Gray,8,#1388
+55% Gray,8,#157C
+60% Gray,8,#1770
+65% Gray,8,#1964
+70% Gray,8,#1B58
+75% Gray,8,#1D4C
+80% Gray,8,#1F40
+85% Gray,8,#2134
+90% Gray,8,#2328
+95% Gray,8,#251C
+Black,8,#2710
