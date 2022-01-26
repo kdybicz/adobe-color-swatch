@@ -12,6 +12,6 @@ jobs:
     - name: Install dependecies
       uses: VaultVulp/action-pipenv@v2.0.1
       with:
-        command: make setup
+        command: install -d
 
     - run: make check
