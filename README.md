@@ -4,7 +4,7 @@
 
 `swatch.py` is a Python 3 script created to extract Color Swatch data from `.aco` files and output them into a simple `.csv`. It can also work in revers, so generate an `.aco` file based on data from a `.csv` file.
 
-`.aco` file format parser and generator were created based on 
+`.aco` file format parser and generator were created based on
 [Adobe Color Swatch File Format Specification](https://www.adobe.com/devnet-apps/photoshop/fileformatashtml/#50577411_pgfId-1055819). Script is supporting read and write for Version 1 and 2 of the Color Swatch format.
 
 `.csv` file is using simple, arbitrary format:

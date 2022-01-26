@@ -16,7 +16,7 @@ setup:
 	pipenv install --dev
 
 test: clean
-	$(pipenv) pytest 
+	$(pipenv) pytest
 # ; --cov=src --cov-report=term-missing --cov-fail-under 95
 
 lint:
