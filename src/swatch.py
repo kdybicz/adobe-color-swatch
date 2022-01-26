@@ -4,9 +4,10 @@ import argparse
 import logging
 import traceback
 import sys
+from unicodedata import numeric
 
 parser = argparse.ArgumentParser(
-    description='Adobe Color Swatch generator and parser'
+  description='Adobe Color Swatch generator and parser'
 )
 subparsers = parser.add_subparsers(help='sub-command help', dest="subCommand")
 
@@ -43,12 +44,20 @@ h2.setLevel(logging.WARNING)
 logger.addHandler(h2)
 
 class ValidationError(Exception):
-    def __init__(self, message):
-      self.message = message
-    def __str__(self):
-      return repr(self.message)
+  def __init__(self, message):
+    self.message = message
+  def __str__(self):
+    return repr(self.message)
 
-def validate_color_space(color_space_id):
+def validate_color_space(color_space_id: int):
+  """Validate provided color space id.
+
+  Args:
+    color_space_id: color space if to be checked.
+
+  Raises:
+    ValidationError: Is raised if provided color space is not supported.
+  """
   if color_space_id in [0, 1, 2, 8]:
     return
   elif color_space_id == 3:
@@ -66,7 +75,38 @@ def validate_color_space(color_space_id):
   else:
     raise ValidationError("unsupported color space: space id {}".format(color_space_id))
 
-def raw_color_to_hex(color_space_id, component_1, component_2, component_3, component_4):
+def raw_color_to_hex(color_space_id: int, component_1: int, component_2: int, component_3: int, component_4: int):
+  """Combines provided color data in a HEX string representation of that color.
+
+  RGB
+    The first three components represent red, green and blue. Fourth should be 0. 
+    They are full unsigned 16-bit values as in Apple's RGBColor data structure. Pure red = 65535, 0, 0.
+  
+  HSB
+    The first three components represent hue, saturation and brightness.
+    They are full unsigned 16-bit values as in Apple's HSVColor data structure. Pure red = 0, 65535, 65535.
+  
+  CMYK
+    The four components represent cyan, magenta, yellow and black. They are full unsigned 16-bit values.
+    0 = 100% ink. For example, pure cyan = 0, 65535, 65535, 65535.
+  
+  Grayscale
+    The first component represent the gray value, from 0...10000.
+
+  Args:
+    color_space_id: color space if to be checked.
+    component_1: first channel of the color for specified color space.
+    component_2: second channel of the color for specified color space.
+    component_3: third channel of the color for specified color space.
+    component_4: fourth channel of the color for specified color space.
+
+  Returns:
+    A HEX string representation of the color.
+
+  Raises:
+    ValidationError: Is raised if color components exceed expected values for
+      provided `color_space_id`.
+  """
   if color_space_id == 0:
     if not 0 <= component_1 <= 65535 or not 0 <= component_2 <= 65535 or not 0 <= component_3 <= 65535 or component_4 != 0:
       raise ValidationError("invalid RGB value: {}, {}, {}, {}".format(component_1, component_2, component_3, component_4))
@@ -90,7 +130,36 @@ def raw_color_to_hex(color_space_id, component_1, component_2, component_3, comp
   else:
     raise ValidationError("unsupported color space: space id {}".format(color_space_id))
 
-def hex_color_to_raw(color_space_id, color_hex):
+def hex_color_to_raw(color_space_id: int, color_hex = ""):
+  """Parses provided HEX string representation of a color into four element list of color components.
+
+  RGB
+    Supports both 8-bit and 16-bit per color channel, expects three channels only. Leading `#` is optional
+    Pure red = #FFFF00000000.
+  
+  HSB
+    Supports both 8-bit and 16-bit per color channel, expects three channels only. Leading `#` is optional
+    Pure red = #00FFFF.
+  
+  CMYK
+    Supports both 8-bit and 16-bit per color channel, expects four channels. Leading `#` is optional
+    Pure cyan = 0000FFFFFFFFFFFF.
+  
+  Grayscale
+    Supports both 8-bit and 16-bit for greay value, expects only one channel. Leading `#` is optional
+    Pure black = #2710.
+
+  Args:
+    color_space_id: color space if to be checked.
+    color_hex: HEX string representation of a color.
+
+  Returns:
+    A four element list of color components.
+
+  Raises:
+    ValidationError: Is raised if color components exceed expected values for
+      provided `color_space_id`.
+  """
   color_hex = color_hex.lstrip('#')
 
   if len(color_hex.strip()) == 0:

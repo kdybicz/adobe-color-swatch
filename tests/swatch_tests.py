@@ -1,6 +1,6 @@
 import pytest
 from contextlib import nullcontext as does_not_raise
-from swatch import ValidationError, validate_color_space, raw_color_to_hex, hex_color_to_raw
+from src.swatch import ValidationError, validate_color_space, raw_color_to_hex, hex_color_to_raw
 
 @pytest.mark.parametrize(
     "color_space_id,expected",
