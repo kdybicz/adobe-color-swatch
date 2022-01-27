@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
+"""
+Adobe Color Swatch generator and parser
+"""
 
-import argparse
+from argparse import ArgumentParser, FileType
+from io import BufferedReader, BufferedWriter, TextIOWrapper
 import logging
-import traceback
 import sys
+import traceback
+from typing import List
 
-parser = argparse.ArgumentParser(
+parser = ArgumentParser(
     description='Adobe Color Swatch generator and parser'
 )
 subparsers = parser.add_subparsers(help='sub-command help', dest="subCommand")
@@ -14,14 +19,15 @@ subparsers = parser.add_subparsers(help='sub-command help', dest="subCommand")
 parser_a = subparsers.add_parser('extract', help="extract help",
   description="Extract .aco input file to a .csv output file"
 )
-parser_a.add_argument("-i", "--input", help="input file", type=argparse.FileType("rb"), required=True)
-parser_a.add_argument("-o", "--output", help="output file", type=argparse.FileType("w"), required=True)
+parser_a.add_argument("-i", "--input", help="input file", type=FileType("rb"), required=True)
+parser_a.add_argument("-o", "--output", help="output file", type=FileType("w"), required=True)
 parser_a.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
 
 # create the parser for the "generate" command
-parser_b = subparsers.add_parser('generate', help='generate help', description="generate .aco output file based on .csv input file")
-parser_b.add_argument("-i", "--input", help="input file", type=argparse.FileType("r"), required=True)
-parser_b.add_argument("-o", "--output", help="output file", type=argparse.FileType("wb"), required=True)
+parser_b = subparsers.add_parser('generate', help='generate help',
+  description="generate .aco output file based on .csv input file")
+parser_b.add_argument("-i", "--input", help="input file", type=FileType("r"), required=True)
+parser_b.add_argument("-o", "--output", help="output file", type=FileType("wb"), required=True)
 parser_b.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
 
 parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
@@ -45,12 +51,14 @@ h2.setLevel(logging.WARNING)
 logger.addHandler(h2)
 
 class ValidationError(Exception):
-    def __init__(self, message):
+    """Error raised in case of any data validation problems"""
+    def __init__(self, message: str):
+        super().__init__()
         self.message = message
-    def __str__(self):
+    def __str__(self) -> str:
         return repr(self.message)
 
-def validate_color_space(color_space_id: int):
+def validate_color_space(color_space_id: int) -> None:
     """Validate provided color space id.
 
     Args:
@@ -61,34 +69,39 @@ def validate_color_space(color_space_id: int):
     """
     if color_space_id in [0, 1, 2, 8]:
         return
-    elif color_space_id == 3:
+    if color_space_id == 3:
         raise ValidationError("unsupported color space: Pantone matching system")
-    elif color_space_id == 4:
+    if color_space_id == 4:
         raise ValidationError("unsupported color space: Focoltone colour system")
-    elif color_space_id == 5:
+    if color_space_id == 5:
         raise ValidationError("unsupported color space: Trumatch color")
-    elif color_space_id == 6:
+    if color_space_id == 6:
         raise ValidationError("unsupported color space: Toyo 88 colorfinder 1050")
-    elif color_space_id == 7:
+    if color_space_id == 7:
         raise ValidationError("unsupported color space: Lab")
-    elif color_space_id == 10:
+    if color_space_id == 10:
         raise ValidationError("unsupported color space: HKS colors")
-    else:
-        raise ValidationError(f'unsupported color space: space id {color_space_id}')
 
-def raw_color_to_hex(color_space_id: int, component_1: int, component_2: int, component_3: int, component_4: int):
+    raise ValidationError(f'unsupported color space: space id {color_space_id}')
+
+def raw_color_to_hex(
+  color_space_id: int, component_1: int, component_2: int, component_3: int, component_4: int
+) -> str:
     """Combines provided color data in a HEX string representation of that color.
 
     RGB
         The first three components represent red, green and blue. Fourth should be 0.
-        They are full unsigned 16-bit values as in Apple's RGBColor data structure. Pure red = 65535, 0, 0.
+        They are full unsigned 16-bit values as in Apple's RGBColor data structure.
+        Pure red = 65535, 0, 0.
 
     HSB
         The first three components represent hue, saturation and brightness.
-        They are full unsigned 16-bit values as in Apple's HSVColor data structure. Pure red = 0, 65535, 65535.
+        They are full unsigned 16-bit values as in Apple's HSVColor data structure.
+        Pure red = 0, 65535, 65535.
 
     CMYK
-        The four components represent cyan, magenta, yellow and black. They are full unsigned 16-bit values.
+        The four components represent cyan, magenta, yellow and black. They are full
+        unsigned 16-bit values.
         0 = 100% ink. For example, pure cyan = 0, 65535, 65535, 65535.
 
     Grayscale
@@ -109,46 +122,59 @@ def raw_color_to_hex(color_space_id: int, component_1: int, component_2: int, co
             provided `color_space_id`.
     """
     if color_space_id == 0:
-        if not 0 <= component_1 <= 65535 or not 0 <= component_2 <= 65535 or not 0 <= component_3 <= 65535 or component_4 != 0:
-            raise ValidationError(f'invalid RGB value: {component_1}, {component_2}, {component_3}, {component_4}')
+        if not 0 <= component_1 <= 65535 or not 0 <= component_2 <= 65535 or \
+            not 0 <= component_3 <= 65535 or component_4 != 0:
+            raise ValidationError(
+                f'invalid RGB value: {component_1}, {component_2}, {component_3}, {component_4}'
+            )
 
         return f'#{component_1:04X}{component_2:04X}{component_3:04X}'
     if color_space_id == 1:
-        if not 0 <= component_1 <= 65535 or not 0 <= component_2 <= 65535 or not 0 <= component_3 <= 65535 or component_4 != 0:
-            raise ValidationError(f'invalid HSB value: {component_1}, {component_2}, {component_3}, {component_4}')
+        if not 0 <= component_1 <= 65535 or not 0 <= component_2 <= 65535 or \
+            not 0 <= component_3 <= 65535 or component_4 != 0:
+            raise ValidationError(
+                f'invalid HSB value: {component_1}, {component_2}, {component_3}, {component_4}'
+            )
 
         return f'#{component_1:04X}{component_2:04X}{component_3:04X}'
-    elif color_space_id == 2:
-        if not 0 <= component_1 <= 65535 or not 0 <= component_2 <= 65535 or not 0 <= component_3 <= 65535 or not 0 <= component_4 <= 65535:
-            raise ValidationError(f'invalid CMYK value: {component_1}, {component_2}, {component_3}, {component_4}')
+    if color_space_id == 2:
+        if not 0 <= component_1 <= 65535 or not 0 <= component_2 <= 65535 or \
+            not 0 <= component_3 <= 65535 or not 0 <= component_4 <= 65535:
+            raise ValidationError(
+                f'invalid CMYK value: {component_1}, {component_2}, {component_3}, {component_4}'
+            )
 
         return f'#{component_1:04X}{component_2:04X}{component_3:04X}{component_4:04X}'
-    elif color_space_id == 8:
-        if not 0 <= component_1 <= 10000 or component_2 != 0 or component_3 != 0 or component_4 != 0:
-            raise ValidationError(f'invalid Grayscale value: {component_1}, {component_2}, {component_3}, {component_4}')
+    if color_space_id == 8:
+        if not 0 <= component_1 <= 10000 or component_2 != 0 or \
+            component_3 != 0 or component_4 != 0:
+            raise ValidationError(
+                f'invalid Grayscale value: {component_1}, {component_2}, {component_3}, {component_4}' # pylint: disable=line-too-long
+            )
 
         return f'#{component_1:04X}'
-    else:
-        raise ValidationError(f'unsupported color space: space id {color_space_id}')
 
-def hex_color_to_raw(color_space_id: int, color_hex = ""):
-    """Parses provided HEX string representation of a color into four element list of color components.
+    raise ValidationError(f'unsupported color space: space id {color_space_id}')
+
+def hex_color_to_raw(color_space_id: int, color_hex: str = "") -> List[int]:
+    """Parses provided HEX string representation of a color
+    into four element list of color components.
 
     RGB
-        Supports both 8-bit and 16-bit per color channel, expects three channels only. Leading `#` is optional
-        Pure red = #FFFF00000000.
+        Supports both 8-bit and 16-bit per color channel, expects three channels only.
+        Leading `#` is optional. Pure red = #FFFF00000000.
 
     HSB
-        Supports both 8-bit and 16-bit per color channel, expects three channels only. Leading `#` is optional
-        Pure red = #00FFFF.
+        Supports both 8-bit and 16-bit per color channel, expects three channels only.
+        Leading `#` is optional. Pure red = #00FFFF.
 
     CMYK
-        Supports both 8-bit and 16-bit per color channel, expects four channels. Leading `#` is optional
-        Pure cyan = 0000FFFFFFFFFFFF.
+        Supports both 8-bit and 16-bit per color channel, expects four channels.
+        Leading `#` is optional. Pure cyan = 0000FFFFFFFFFFFF.
 
     Grayscale
-        Supports both 8-bit and 16-bit for greay value, expects only one channel. Leading `#` is optional
-        Pure black = #2710.
+        Supports both 8-bit and 16-bit for grey value, expects only one channel.
+        Leading `#` is optional. Pure black = #2710.
 
     Args:
         color_space_id: color space if to be checked.
@@ -169,20 +195,44 @@ def hex_color_to_raw(color_space_id: int, color_hex = ""):
     if color_space_id in [0, 1]:
         if len(color_hex) == 6:
             # * 257 to convert to 32-bit color space
-            return [int(color_hex[0:2], base=16) * 257, int(color_hex[2:4], base=16) * 257, int(color_hex[4:6], base=16) * 257, 0]
-        elif len(color_hex) == 12:
-            return [int(color_hex[0:4], base=16), int(color_hex[4:8], base=16), int(color_hex[8:12], base=16), 0]
-        else:
-            raise ValidationError(f'unsupported color format: {color_hex}')
-    elif color_space_id == 2:
+            return [
+                int(color_hex[0:2], base=16) * 257,
+                int(color_hex[2:4], base=16) * 257,
+                int(color_hex[4:6], base=16) * 257,
+                0
+            ]
+
+        if len(color_hex) == 12:
+            return [
+                int(color_hex[0:4], base=16),
+                int(color_hex[4:8], base=16),
+                int(color_hex[8:12], base=16),
+                0
+            ]
+
+        raise ValidationError(f'unsupported color format: {color_hex}')
+
+    if color_space_id == 2:
         if len(color_hex) == 8:
             # * 257 to convert to 32-bit color space
-            return [int(color_hex[0:2], base=16) * 257, int(color_hex[2:4], base=16) * 257, int(color_hex[4:6], base=16) * 257, int(color_hex[6:8], base=16) * 257]
-        elif len(color_hex) == 16:
-            return [int(color_hex[0:4], base=16), int(color_hex[4:8], base=16), int(color_hex[8:12], base=16), int(color_hex[12:16], base=16)]
-        else:
-            raise ValidationError(f'unsupported color format: {color_hex}')
-    elif color_space_id == 8:
+            return [
+                int(color_hex[0:2], base=16) * 257,
+                int(color_hex[2:4], base=16) * 257,
+                int(color_hex[4:6], base=16) * 257,
+                int(color_hex[6:8], base=16) * 257
+            ]
+
+        if len(color_hex) == 16:
+            return [
+                int(color_hex[0:4], base=16),
+                int(color_hex[4:8], base=16),
+                int(color_hex[8:12], base=16),
+                int(color_hex[12:16], base=16)
+            ]
+
+        raise ValidationError(f'unsupported color format: {color_hex}')
+
+    if color_space_id == 8:
         if len(color_hex) == 2:
             # * 257 to convert to 32-bit color space
             gray = int(color_hex[0:2], base=16) * 257
@@ -194,11 +244,30 @@ def hex_color_to_raw(color_space_id: int, color_hex = ""):
         if gray > 10000:
             raise ValidationError(f'invalid grayscale value: {color_hex}')
 
-        return [gray, 0, 0, 0]
-    else:
-        raise ValidationError(f'unsupported color space: space id {color_space_id}')
+        return [
+            gray,
+            0,
+            0,
+            0
+        ]
 
-def parse_aco(file):
+    raise ValidationError(f'unsupported color space: space id {color_space_id}')
+
+def parse_aco(file: BufferedReader) -> List:
+    """Parses the `.aco` file and returns a list of lists, were each of them contains the name,
+    color space id and a HEX string representation of the colors extracted from the Color Swatch
+    file.
+
+    Args:
+        file: handle to the `.aco` file to be parsed.
+
+    Returns:
+        A list of lists, were each of them contains the name, color space id and a HEX string
+        representation of the colors extracted from the Color Swatch file.
+
+    Raises:
+        ValidationError: Is raised if parsed file contains unexpected data.
+    """
     colors = []
 
     try:
@@ -223,7 +292,9 @@ def parse_aco(file):
 
             logger.debug(" - ID: %d", idx)
             logger.debug("   Color space: %d", color_space_id)
-            logger.debug("   Components: %d %d %d %d", component_1, component_2, component_3, component_4)
+            logger.debug(
+              "   Components: %d %d %d %d", component_1, component_2, component_3, component_4
+            )
 
         # Version 2
         logger.debug("\nParsing version 2 section")
@@ -251,16 +322,16 @@ def parse_aco(file):
             # droping the string termination character
             file.read(2)
 
-            color_hex = raw_color_to_hex(color_space_id, component_1, component_2, component_3, component_4)
+            color_hex = raw_color_to_hex(
+                color_space_id, component_1, component_2, component_3, component_4
+            )
 
             logger.debug(" - ID: %d", idx)
             logger.debug("   Color name: %d", name)
             logger.debug("   Color space: %d", color_space_id)
             logger.debug("   Color: %d", color_hex)
 
-            color = [name, color_space_id, color_hex]
-
-            colors.append(color)
+            colors.append([name, color_space_id, color_hex])
 
     except ValidationError as err:
         logger.error("\nError while parsing .aco file: %s", err.message)
@@ -270,7 +341,14 @@ def parse_aco(file):
 
     return colors
 
-def save_csv(colors_data, file):
+def save_csv(colors_data: List, file: TextIOWrapper) -> None:
+    """Saves provided color data into a `.csv` file.
+
+    Args:
+        colors_data: list of lists, were each of them contains the name, color space id and
+            a HEX string representation of a color.
+        file: handle to the `.csv` file to be saved.
+    """
     try:
         file.write("name,space_id,color")
         file.write("\n")
@@ -295,14 +373,33 @@ def save_csv(colors_data, file):
     finally:
         file.close()
 
-def extract_aco(input_file, output_file):
+def extract_aco(input_file: BufferedReader, output_file: TextIOWrapper) -> None:
+    """Extracts data from `.aco` file and stores them in the `.csv` file.
+
+    Args:
+        input_file: handle to the `.aco` file to be parsed.
+        output_file: handle to the `.csv` file to be saved.
+    """
     print("\nExtracting \"%s\" to \"%s\"", input_file.name, output_file.name)
 
     colors_data = parse_aco(input_file)
 
     save_csv(colors_data, output_file)
 
-def parse_csv(file):
+def parse_csv(file: TextIOWrapper) -> List:
+    """Parses the `.csv` file and returns a list of lists, were each of them contains the name,
+    color space id and four color components.
+
+    Args:
+        file: handle to the `.csv` file to be parsed.
+
+    Returns:
+        A list of lists, were each of them contains the name, color space id and four color
+        components.
+
+    Raises:
+        ValidationError: Is raised if parsed file contains unexpected data.
+    """
     colors = []
 
     try:
@@ -336,9 +433,14 @@ def parse_csv(file):
 
             color_components = hex_color_to_raw(color_space_id, color_hex)
 
-            color = [name, color_space_id, color_components[0], color_components[1], color_components[2], color_components[3]]
-
-            colors.append(color)
+            colors.append([
+                name,
+                color_space_id,
+                color_components[0],
+                color_components[1],
+                color_components[2],
+                color_components[3]
+            ])
 
     except ValidationError as err:
         logger.info("\nError while parsing .csv file: %s", err.message)
@@ -348,7 +450,14 @@ def parse_csv(file):
 
     return colors
 
-def save_aco(colors_data, file):
+def save_aco(colors_data: List, file: BufferedWriter) -> None:
+    """Saves provided color data into a `.aco` file.
+
+    Args:
+        colors_data: list of lists, were each of them contains the name, color space id and four
+        color components.
+        file: handle to the `.aco` file to be saved.
+    """
     try:
         # Version 1
         version = 1
@@ -408,14 +517,23 @@ def save_aco(colors_data, file):
     finally:
         file.close()
 
-def generate_aco(input_file, output_file):
+def generate_aco(input_file: TextIOWrapper, output_file: BufferedWriter) -> None:
+    """Generating`.aco` file based on the data from the `.csv` file.
+
+    Args:
+        input_file: handle to the `.csv` file to be parsed.
+        output_file: handle to the `.aco` file to be saved.
+    """
     logger.info("\nGenerating \"%s\" to \"%s\"", input_file.name, output_file.name)
 
     colors_data = parse_csv(input_file)
 
     save_aco(colors_data, output_file)
 
-def main():
+def main() -> None:
+    """
+    Main program
+    """
     extracting = args.subCommand == 'extract'
     generating = args.subCommand == 'generate'
 

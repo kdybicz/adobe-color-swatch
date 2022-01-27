@@ -9,9 +9,23 @@ jobs:
       with:
         python-version: 3.9
         architecture: x64
-    - name: Install dependecies
+
+    - name: Install dependencies
       uses: VaultVulp/action-pipenv@v2.0.1
       with:
         command: install -d
 
-    - run: make check
+    - name: Run tests
+      uses: VaultVulp/action-pipenv@v2.0.1
+      with:
+        command: pytest
+
+    - name: Run linter
+      uses: VaultVulp/action-pipenv@v2.0.1
+      with:
+        command: pylint src --reports=y
+
+    - name: Run type checks
+      uses: VaultVulp/action-pipenv@v2.0.1
+      with:
+        command: mypy src
