@@ -18,14 +18,14 @@ jobs:
     - name: Run tests
       uses: VaultVulp/action-pipenv@v2.0.1
       with:
-        command: pytest
+        command: run pytest
 
     - name: Run linter
       uses: VaultVulp/action-pipenv@v2.0.1
       with:
-        command: pylint src --reports=y
+        command: run pylint src --reports=y
 
     - name: Run type checks
       uses: VaultVulp/action-pipenv@v2.0.1
       with:
-        command: mypy src
+        command: run mypy src
