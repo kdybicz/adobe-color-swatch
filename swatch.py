@@ -2,55 +2,60 @@
 """
 Adobe Color Swatch generator and parser
 """
-
 from argparse import ArgumentParser, FileType
+from enum import Enum, unique
 from io import BufferedReader, BufferedWriter, TextIOWrapper
 import logging
 import sys
 import traceback
-from typing import List
-from src.enums import ColorSpace
-from src.exceptions import ValidationError
+from typing import List, Optional
 
-parser = ArgumentParser(
-    description='Adobe Color Swatch generator and parser'
-)
-subparsers = parser.add_subparsers(help='sub-command help', dest="subCommand")
-
-# create the parser for the "extract" command
-parser_a = subparsers.add_parser('extract', help="extract help",
-    description="Extract .aco input file to a .csv output file"
-)
-parser_a.add_argument("-i", "--input", help="input file", type=FileType("rb"), required=True)
-parser_a.add_argument("-o", "--output", help="output file", type=FileType("w"), required=True)
-parser_a.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
-
-# create the parser for the "generate" command
-parser_b = subparsers.add_parser('generate', help='generate help',
-    description="generate .aco output file based on .csv input file")
-parser_b.add_argument("-i", "--input", help="input file", type=FileType("r"), required=True)
-parser_b.add_argument("-o", "--output", help="output file", type=FileType("wb"), required=True)
-parser_b.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
-
-parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
-
-args = parser.parse_args()
-if args.verbose:
-    LEVEL = logging.DEBUG
-else:
-    LEVEL = logging.INFO
-
-logging.basicConfig(level=LEVEL, format='%(message)s', handlers=[])
 logger = logging.getLogger("__name__")
 
 h1 = logging.StreamHandler(sys.stdout)
-h1.setLevel(LEVEL)
+h1.setLevel(logging.DEBUG)
 h1.addFilter(lambda record: record.levelno <= logging.INFO)
 logger.addHandler(h1)
 
 h2 = logging.StreamHandler(sys.stderr)
 h2.setLevel(logging.WARNING)
 logger.addHandler(h2)
+
+@unique
+class ColorSpace(Enum):
+    """
+    Adobe Color Swatch - Color Space Ids.
+    """
+    RGB = (0, "RGB", True)
+    HSB = (1, "HSB", True)
+    CMYK = (2, "CMYK", True)
+    PANTONE = (3, "Pantone matching system", False)
+    FOCOLTONE = (4, "Focoltone colour system", False)
+    TRUMATCH = (5, "Trumatch color", False)
+    TOYO = (6, "Toyo 88 colorfinder 1050", False)
+    LAB = (7, "Lab", False)
+    GRAYSCALE = (8, "Grayscale", True)
+    HKS = (10, "HKS colors", False)
+
+    def __new__(cls, *args): # type: ignore
+        obj = object.__new__(cls)
+        obj._value_ = args[0]
+        return obj
+
+    def __init__(self, _: int, label: Optional[str] = None, supported: Optional[bool] = False):
+        self.label = label
+        self.supported = supported
+
+    def __str__(self) -> str:
+        return self.label if self.label is not None else "unknown"
+
+class ValidationError(Exception):
+    """Error raised in case of any data validation problems"""
+    def __init__(self, message: str):
+        super().__init__()
+        self.message = message
+    def __str__(self) -> str:
+        return repr(self.message)
 
 def validate_color_space(color_space: ColorSpace) -> None:
     """Validate provided `color_space`.
@@ -361,7 +366,7 @@ def extract_aco(input_file: BufferedReader, output_file: TextIOWrapper) -> None:
         input_file: handle to the `.aco` file to be parsed.
         output_file: handle to the `.csv` file to be saved.
     """
-    print("\nExtracting \"%s\" to \"%s\"", input_file.name, output_file.name)
+    logger.info("\nExtracting \"%s\" to \"%s\"", input_file.name, output_file.name)
 
     colors_data = parse_aco(input_file)
 
@@ -514,10 +519,45 @@ def generate_aco(input_file: TextIOWrapper, output_file: BufferedWriter) -> None
 
     save_aco(colors_data, output_file)
 
+def _args_parser() -> ArgumentParser:
+    parser = ArgumentParser(
+        description='Adobe Color Swatch generator and parser'
+    )
+    subparsers = parser.add_subparsers(help='sub-command help', dest="subCommand")
+
+    # create the parser for the "extract" command
+    parser_a = subparsers.add_parser('extract', help="extract help",
+        description="Extract .aco input file to a .csv output file"
+    )
+    parser_a.add_argument("-i", "--input", help="input file", type=FileType("rb"), required=True)
+    parser_a.add_argument("-o", "--output", help="output file", type=FileType("w"), required=True)
+    parser_a.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
+
+    # create the parser for the "generate" command
+    parser_b = subparsers.add_parser('generate', help='generate help',
+        description="generate .aco output file based on .csv input file")
+    parser_b.add_argument("-i", "--input", help="input file", type=FileType("r"), required=True)
+    parser_b.add_argument("-o", "--output", help="output file", type=FileType("wb"), required=True)
+    parser_b.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
+
+    parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
+
+    return parser
+
 def main() -> None:
     """
     Main program
     """
+    parser = _args_parser()
+    args = parser.parse_args()
+
+    if args.verbose:
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.INFO
+
+    logging.basicConfig(level=log_level, format='%(message)s', handlers=[])
+
     extracting = args.subCommand == 'extract'
     generating = args.subCommand == 'generate'
 
@@ -529,7 +569,7 @@ def main() -> None:
     output_file = args.output
 
     try:
-        if extracting is False:
+        if extracting is True:
             extract_aco(input_file, output_file)
         else:
             generate_aco(input_file, output_file)

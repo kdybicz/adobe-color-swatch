@@ -23,9 +23,9 @@ jobs:
     - name: Run linter
       uses: VaultVulp/action-pipenv@v2.0.1
       with:
-        command: run pylint src --reports=y
+        command: run pylint swatch --reports=y
 
     - name: Run type checks
       uses: VaultVulp/action-pipenv@v2.0.1
       with:
-        command: run mypy src
+        command: run mypy -m swatch

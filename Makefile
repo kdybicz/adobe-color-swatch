@@ -20,9 +20,9 @@ test: clean
 # ; --cov=src --cov-report=term-missing --cov-fail-under 95
 
 lint:
-	$(pipenv) pylint src --reports=y
+	$(pipenv) pylint swatch --reports=y
 
 mypy:
-	${pipenv} mypy src
+	${pipenv} mypy -m swatch
 
 check: test lint mypy
