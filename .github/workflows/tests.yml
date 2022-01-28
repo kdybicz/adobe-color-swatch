@@ -3,29 +3,36 @@ on: push
 jobs:
   tests:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.9]
+
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v1
-      with:
-        python-version: 3.9
-        architecture: x64
+      - name: checkout
+        uses: actions/checkout@v2
 
-    - name: Install dependencies
-      uses: VaultVulp/action-pipenv@v2.0.1
-      with:
-        command: install -d
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Run tests
-      uses: VaultVulp/action-pipenv@v2.0.1
-      with:
-        command: run pytest
+      - name: Install dependencies
+        uses: VaultVulp/action-pipenv@v2.0.1
+        with:
+          command: install -d
 
-    - name: Run linter
-      uses: VaultVulp/action-pipenv@v2.0.1
-      with:
-        command: run pylint swatch --reports=y
+      - name: Run tests
+        uses: VaultVulp/action-pipenv@v2.0.1
+        with:
+          command: run pytest
 
-    - name: Run type checks
-      uses: VaultVulp/action-pipenv@v2.0.1
-      with:
-        command: run mypy -m swatch
+      - name: Run linter
+        uses: VaultVulp/action-pipenv@v2.0.1
+        with:
+          command: run pylint swatch --reports=y
+
+      - name: Run type checks
+        uses: VaultVulp/action-pipenv@v2.0.1
+        with:
+          command: run mypy -m swatch

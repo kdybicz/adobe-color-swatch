@@ -1,6 +1,8 @@
-import pytest
+# pylint: disable=missing-function-docstring,missing-module-docstring,too-many-arguments
 from contextlib import nullcontext as does_not_raise
-from swatch import ColorSpace, ValidationError, validate_color_space, raw_color_to_hex, hex_color_to_raw
+import pytest
+from swatch import ColorSpace, ValidationError, \
+    validate_color_space, raw_color_to_hex, hex_color_to_raw
 
 @pytest.mark.parametrize(
     "color_space,expected",
@@ -8,13 +10,25 @@ from swatch import ColorSpace, ValidationError, validate_color_space, raw_color_
         (ColorSpace.RGB, does_not_raise()),
         (ColorSpace.HSB, does_not_raise()),
         (ColorSpace.CMYK, does_not_raise()),
-        (ColorSpace.PANTONE, pytest.raises(ValidationError, match="unsupported color space: Pantone matching system")),
-        (ColorSpace.FOCOLTONE, pytest.raises(ValidationError, match="unsupported color space: Focoltone colour system")),
-        (ColorSpace.TRUMATCH, pytest.raises(ValidationError, match="unsupported color space: Trumatch color")),
-        (ColorSpace.TOYO, pytest.raises(ValidationError, match="unsupported color space: Toyo 88 colorfinder 1050")),
-        (ColorSpace.LAB, pytest.raises(ValidationError, match="unsupported color space: Lab")),
+        (ColorSpace.PANTONE, pytest.raises(
+            ValidationError, match="unsupported color space: Pantone matching system")
+        ),
+        (ColorSpace.FOCOLTONE, pytest.raises(
+            ValidationError, match="unsupported color space: Focoltone colour system")
+        ),
+        (ColorSpace.TRUMATCH, pytest.raises(
+            ValidationError, match="unsupported color space: Trumatch color")
+        ),
+        (ColorSpace.TOYO, pytest.raises(
+            ValidationError, match="unsupported color space: Toyo 88 colorfinder 1050")
+        ),
+        (ColorSpace.LAB, pytest.raises(
+            ValidationError, match="unsupported color space: Lab")
+        ),
         (ColorSpace.GRAYSCALE, does_not_raise()),
-        (ColorSpace.HKS, pytest.raises(ValidationError, match="unsupported color space: HKS colors")),
+        (ColorSpace.HKS, pytest.raises(
+            ValidationError, match="unsupported color space: HKS colors")
+        ),
     ],
 )
 def test_validate_color_space(color_space, expected):
@@ -28,13 +42,25 @@ def test_validate_color_space(color_space, expected):
         (ColorSpace.RGB, does_not_raise()),
         (ColorSpace.HSB, does_not_raise()),
         (ColorSpace.CMYK, does_not_raise()),
-        (ColorSpace.PANTONE, pytest.raises(ValidationError, match="unsupported color space: Pantone matching system")),
-        (ColorSpace.FOCOLTONE, pytest.raises(ValidationError, match="unsupported color space: Focoltone colour system")),
-        (ColorSpace.TRUMATCH, pytest.raises(ValidationError, match="unsupported color space: Trumatch color")),
-        (ColorSpace.TOYO, pytest.raises(ValidationError, match="unsupported color space: Toyo 88 colorfinder 1050")),
-        (ColorSpace.LAB, pytest.raises(ValidationError, match="unsupported color space: Lab")),
+        (ColorSpace.PANTONE, pytest.raises(
+            ValidationError, match="unsupported color space: Pantone matching system")
+        ),
+        (ColorSpace.FOCOLTONE, pytest.raises(
+            ValidationError, match="unsupported color space: Focoltone colour system")
+        ),
+        (ColorSpace.TRUMATCH, pytest.raises(
+            ValidationError, match="unsupported color space: Trumatch color")
+        ),
+        (ColorSpace.TOYO, pytest.raises(
+            ValidationError, match="unsupported color space: Toyo 88 colorfinder 1050")
+        ),
+        (ColorSpace.LAB, pytest.raises(
+            ValidationError, match="unsupported color space: Lab")
+        ),
         (ColorSpace.GRAYSCALE, does_not_raise()),
-        (ColorSpace.HKS, pytest.raises(ValidationError, match="unsupported color space: HKS colors")),
+        (ColorSpace.HKS, pytest.raises(
+            ValidationError, match="unsupported color space: HKS colors")
+        ),
     ],
 )
 def test_raw_color_to_hex_with_validation(color_space, expected):
@@ -54,7 +80,9 @@ def test_raw_color_to_hex_with_validation(color_space, expected):
         (0, 0, 0, 1),
     ],
 )
-def test_raw_color_to_hex_for_rgb_invalid_values(component_1, component_2, component_3, component_4):
+def test_raw_color_to_hex_for_rgb_invalid_values(
+    component_1, component_2, component_3, component_4
+):
     # expect
     with pytest.raises(ValidationError, match=r"invalid RGB value:"):
         raw_color_to_hex(ColorSpace.RGB, component_1, component_2, component_3, component_4)
@@ -71,7 +99,9 @@ def test_raw_color_to_hex_for_rgb_invalid_values(component_1, component_2, compo
         (0, 0, 0, 1),
     ],
 )
-def test_raw_color_to_hex_for_hsb_invalid_values(component_1, component_2, component_3, component_4):
+def test_raw_color_to_hex_for_hsb_invalid_values(
+    component_1, component_2, component_3, component_4
+):
     # expect
     with pytest.raises(ValidationError, match=r"invalid HSB value:"):
         raw_color_to_hex(ColorSpace.HSB, component_1, component_2, component_3, component_4)
@@ -89,7 +119,9 @@ def test_raw_color_to_hex_for_hsb_invalid_values(component_1, component_2, compo
         (0, 0, 0, 65536),
     ],
 )
-def test_raw_color_to_hex_for_cmyk_invalid_values(component_1, component_2, component_3, component_4):
+def test_raw_color_to_hex_for_cmyk_invalid_values(
+    component_1, component_2, component_3, component_4
+):
     # expect
     with pytest.raises(ValidationError, match=r"invalid CMYK value:"):
         raw_color_to_hex(ColorSpace.CMYK, component_1, component_2, component_3, component_4)
@@ -102,7 +134,9 @@ def test_raw_color_to_hex_for_cmyk_invalid_values(component_1, component_2, comp
         (65536, 0, 0, 0),
     ],
 )
-def test_raw_color_to_hex_for_grayscale_invalid_values(component_1, component_2, component_3, component_4):
+def test_raw_color_to_hex_for_grayscale_invalid_values(
+    component_1, component_2, component_3, component_4
+):
     # expect
     with pytest.raises(ValidationError, match=r"invalid Grayscale value:"):
         raw_color_to_hex(ColorSpace.GRAYSCALE, component_1, component_2, component_3, component_4)
@@ -116,9 +150,13 @@ def test_raw_color_to_hex_for_grayscale_invalid_values(component_1, component_2,
         (ColorSpace.GRAYSCALE, 10000, 0, 0, 0, '#2710'),
     ],
 )
-def test_raw_color_to_hex_for_supported_color_space(color_space, component_1, component_2, component_3, component_4, expected):
+def test_raw_color_to_hex_for_supported_color_space(
+    color_space, component_1, component_2, component_3, component_4, expected
+):
     # expect
-    assert raw_color_to_hex(color_space, component_1, component_2, component_3, component_4) == expected
+    assert raw_color_to_hex(
+        color_space, component_1, component_2, component_3, component_4
+    ) == expected
 
 @pytest.mark.parametrize(
     "color_hex,exception,expected",
@@ -129,11 +167,21 @@ def test_raw_color_to_hex_for_supported_color_space(color_space, component_1, co
         ('000000000000', does_not_raise(), [0, 0, 0, 0]),
         ('0F0F0F0F0F0F', does_not_raise(), [3855, 3855, 3855, 0]),
         ('FFFFFFFFFFFF', does_not_raise(), [65535, 65535, 65535, 0]),
-        ('# ', pytest.raises(ValidationError, match=r"unsupported color format:"), []),
-        ('F0F', pytest.raises(ValidationError, match=r"unsupported color format:"), []),
-        ('F0F0F', pytest.raises(ValidationError, match=r"unsupported color format:"), []),
-        ('F0F0F0F0F0F', pytest.raises(ValidationError, match=r"unsupported color format:"), []),
-        ('F0F0F0F0F0F0F', pytest.raises(ValidationError, match=r"unsupported color format:"), []),
+        ('# ', pytest.raises(
+            ValidationError, match=r"unsupported color format:"), []
+        ),
+        ('F0F', pytest.raises(
+            ValidationError, match=r"unsupported color format:"), []
+        ),
+        ('F0F0F', pytest.raises(
+            ValidationError, match=r"unsupported color format:"), []
+        ),
+        ('F0F0F0F0F0F', pytest.raises(
+            ValidationError, match=r"unsupported color format:"), []
+        ),
+        ('F0F0F0F0F0F0F', pytest.raises(
+            ValidationError, match=r"unsupported color format:"), []
+        ),
     ],
 )
 def test_hex_color_to_raw_for_rgb(color_hex, exception, expected):
@@ -150,11 +198,21 @@ def test_hex_color_to_raw_for_rgb(color_hex, exception, expected):
         ('000000000000', does_not_raise(), [0, 0, 0, 0]),
         ('0F0F0F0F0F0F', does_not_raise(), [3855, 3855, 3855, 0]),
         ('FFFFFFFFFFFF', does_not_raise(), [65535, 65535, 65535, 0]),
-        ('# ', pytest.raises(ValidationError, match=r"unsupported color format:"), []),
-        ('F0F', pytest.raises(ValidationError, match=r"unsupported color format:"), []),
-        ('F0F0F', pytest.raises(ValidationError, match=r"unsupported color format:"), []),
-        ('F0F0F0F0F0F', pytest.raises(ValidationError, match=r"unsupported color format:"), []),
-        ('F0F0F0F0F0F0F', pytest.raises(ValidationError, match=r"unsupported color format:"), []),
+        ('# ', pytest.raises(
+            ValidationError, match=r"unsupported color format:"), []
+        ),
+        ('F0F', pytest.raises(
+            ValidationError, match=r"unsupported color format:"), []
+        ),
+        ('F0F0F', pytest.raises(
+            ValidationError, match=r"unsupported color format:"), []
+        ),
+        ('F0F0F0F0F0F', pytest.raises(
+            ValidationError, match=r"unsupported color format:"), []
+        ),
+        ('F0F0F0F0F0F0F', pytest.raises(
+            ValidationError, match=r"unsupported color format:"), []
+        ),
     ],
 )
 def test_hex_color_to_raw_for_hsb(color_hex, exception, expected):
@@ -171,11 +229,21 @@ def test_hex_color_to_raw_for_hsb(color_hex, exception, expected):
         ('0000000000000000', does_not_raise(), [0, 0, 0, 0]),
         ('0F0F0F0F0F0F0F0F', does_not_raise(), [3855, 3855, 3855, 3855]),
         ('FFFFFFFFFFFFFFFF', does_not_raise(), [65535, 65535, 65535, 65535]),
-        ('# ', pytest.raises(ValidationError, match=r"unsupported color format:"), []),
-        ('F0F0F0F', pytest.raises(ValidationError, match=r"unsupported color format:"), []),
-        ('F0F0F0F0F', pytest.raises(ValidationError, match=r"unsupported color format:"), []),
-        ('F0F0F0F0F0F0F0F', pytest.raises(ValidationError, match=r"unsupported color format:"), []),
-        ('F0F0F0F0F0F0F0F0F', pytest.raises(ValidationError, match=r"unsupported color format:"), []),
+        ('# ', pytest.raises(
+            ValidationError, match=r"unsupported color format:"), []
+        ),
+        ('F0F0F0F', pytest.raises(
+            ValidationError, match=r"unsupported color format:"), []
+        ),
+        ('F0F0F0F0F', pytest.raises(
+            ValidationError, match=r"unsupported color format:"), []
+        ),
+        ('F0F0F0F0F0F0F0F', pytest.raises(
+            ValidationError, match=r"unsupported color format:"), []
+        ),
+        ('F0F0F0F0F0F0F0F0F', pytest.raises(
+            ValidationError, match=r"unsupported color format:"), []
+        ),
     ],
 )
 def test_hex_color_to_raw_for_cmyk(color_hex, exception, expected):
@@ -192,11 +260,21 @@ def test_hex_color_to_raw_for_cmyk(color_hex, exception, expected):
         ('0000', does_not_raise(), [0, 0, 0, 0]),
         ('0F0F', does_not_raise(), [3855, 0, 0, 0]),
         ('2710', does_not_raise(), [10000, 0, 0, 0]),
-        ('# ', pytest.raises(ValidationError, match=r"unsupported color format:"), []),
-        ('F0F0F0F', pytest.raises(ValidationError, match=r"unsupported color format:"), []),
-        ('F0F0F0F0F', pytest.raises(ValidationError, match=r"unsupported color format:"), []),
-        ('F0F0F0F0F0F0F0F', pytest.raises(ValidationError, match=r"unsupported color format:"), []),
-        ('F0F0F0F0F0F0F0F0F', pytest.raises(ValidationError, match=r"unsupported color format:"), []),
+        ('# ', pytest.raises(
+            ValidationError, match=r"unsupported color format:"), []
+        ),
+        ('F0F0F0F', pytest.raises(
+            ValidationError, match=r"unsupported color format:"), []
+        ),
+        ('F0F0F0F0F', pytest.raises(
+            ValidationError, match=r"unsupported color format:"), []
+        ),
+        ('F0F0F0F0F0F0F0F', pytest.raises(
+            ValidationError, match=r"unsupported color format:"), []
+        ),
+        ('F0F0F0F0F0F0F0F0F', pytest.raises(
+            ValidationError, match=r"unsupported color format:"), []
+        ),
     ],
 )
 def test_hex_color_to_raw_for_grayscale(color_hex, exception, expected):
