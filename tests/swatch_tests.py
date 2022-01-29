@@ -1,7 +1,7 @@
 # pylint: disable=missing-function-docstring,missing-module-docstring,too-many-arguments
 from contextlib import nullcontext as does_not_raise
 import pytest
-from swatch import ColorSpace, ValidationError, \
+from swatch.swatch import ColorSpace, ValidationError, \
     validate_color_space, raw_color_to_hex, hex_color_to_raw
 
 @pytest.mark.parametrize(
