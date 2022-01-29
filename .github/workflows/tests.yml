@@ -30,9 +30,9 @@ jobs:
       - name: Run linter
         uses: VaultVulp/action-pipenv@v2.0.1
         with:
-          command: run pylint swatch --reports=y
+          command: run pylint swatch/ tests/ --reports=y
 
       - name: Run type checks
         uses: VaultVulp/action-pipenv@v2.0.1
         with:
-          command: run mypy -m swatch
+          command: run mypy swatch

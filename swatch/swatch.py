@@ -1,7 +1,6 @@
 """
 Adobe Color Swatch generator and parser
 """
-from argparse import ArgumentParser, FileType
 from enum import Enum, unique
 from io import BufferedReader, BufferedWriter, TextIOWrapper
 import logging
@@ -45,10 +44,198 @@ class ValidationError(Exception):
     def __str__(self) -> str:
         return repr(self.message)
 
+def validate_color_space(color_space: ColorSpace) -> None:
+    """Validate provided `color_space`.
+
+    Args:
+        color_space: color space to be checked.
+
+    Raises:
+        ValidationError: Is raised if provided color space is not supported.
+    """
+    if color_space.supported is False:
+        raise ValidationError(f'unsupported color space: {str(color_space)}')
+
+
+def raw_color_to_hex(
+    color_space: ColorSpace,
+    component_1: int,
+    component_2: int,
+    component_3: int,
+    component_4: int
+) -> str:
+    """Combines provided color data in a HEX string representation of that color.
+
+    RGB
+        The first three components represent red, green and blue. Fourth should be 0.
+        They are full unsigned 16-bit values as in Apple's RGBColor data structure.
+        Pure red = 65535, 0, 0.
+
+    HSB
+        The first three components represent hue, saturation and brightness.
+        They are full unsigned 16-bit values as in Apple's HSVColor data structure.
+        Pure red = 0, 65535, 65535.
+
+    CMYK
+        The four components represent cyan, magenta, yellow and black. They are full
+        unsigned 16-bit values.
+        0 = 100% ink. For example, pure cyan = 0, 65535, 65535, 65535.
+
+    Grayscale
+        The first component represent the gray value, from 0...10000.
+
+    Args:
+        color_space: color space if to be checked.
+        component_1: first channel of the color for specified color space.
+        component_2: second channel of the color for specified color space.
+        component_3: third channel of the color for specified color space.
+        component_4: fourth channel of the color for specified color space.
+
+    Returns:
+        A HEX string representation of the color.
+
+    Raises:
+        ValidationError: Is raised if color components exceed expected values for
+            provided `color_space`.
+    """
+    if color_space is ColorSpace.RGB:
+        if not 0 <= component_1 <= 65535 or not 0 <= component_2 <= 65535 or \
+            not 0 <= component_3 <= 65535 or component_4 != 0:
+            raise ValidationError(
+                f'invalid RGB value: {component_1}, {component_2}, {component_3}, {component_4}' # pylint: disable=line-too-long
+            )
+
+        return f'#{component_1:04X}{component_2:04X}{component_3:04X}'
+    if color_space is ColorSpace.HSB:
+        if not 0 <= component_1 <= 65535 or not 0 <= component_2 <= 65535 or \
+            not 0 <= component_3 <= 65535 or component_4 != 0:
+            raise ValidationError(
+                f'invalid HSB value: {component_1}, {component_2}, {component_3}, {component_4}' # pylint: disable=line-too-long
+            )
+
+        return f'#{component_1:04X}{component_2:04X}{component_3:04X}'
+    if color_space is ColorSpace.CMYK:
+        if not 0 <= component_1 <= 65535 or not 0 <= component_2 <= 65535 or \
+            not 0 <= component_3 <= 65535 or not 0 <= component_4 <= 65535:
+            raise ValidationError(
+                f'invalid CMYK value: {component_1}, {component_2}, {component_3}, {component_4}' # pylint: disable=line-too-long
+            )
+
+        return f'#{component_1:04X}{component_2:04X}{component_3:04X}{component_4:04X}'
+    if color_space is ColorSpace.GRAYSCALE:
+        if not 0 <= component_1 <= 10000 or component_2 != 0 or \
+            component_3 != 0 or component_4 != 0:
+            raise ValidationError(
+                f'invalid Grayscale value: {component_1}, {component_2}, {component_3}, {component_4}' # pylint: disable=line-too-long
+            )
+
+        return f'#{component_1:04X}'
+
+    raise ValidationError(f'unsupported color space: {str(color_space)}')
+
+def hex_color_to_raw(
+    color_space: ColorSpace,
+    color_hex: str = ""
+) -> List[int]:
+    """Parses provided HEX string representation of a color
+    into four element list of color components.
+
+    RGB
+        Supports both 8-bit and 16-bit per color channel, expects three channels only.
+        Leading `#` is optional. Pure red = #FFFF00000000.
+
+    HSB
+        Supports both 8-bit and 16-bit per color channel, expects three channels only.
+        Leading `#` is optional. Pure red = #00FFFF.
+
+    CMYK
+        Supports both 8-bit and 16-bit per color channel, expects four channels.
+        Leading `#` is optional. Pure cyan = 0000FFFFFFFFFFFF.
+
+    Grayscale
+        Supports both 8-bit and 16-bit for grey value, expects only one channel.
+        Leading `#` is optional. Pure black = #2710.
+
+    Args:
+        color_space: color space if to be checked.
+        color_hex: HEX string representation of a color.
+
+    Returns:
+        A four element list of color components.
+
+    Raises:
+        ValidationError: Is raised if color components exceed expected values for
+            provided `color_space`.
+    """
+    color_hex = color_hex.lstrip('#')
+
+    if len(color_hex.strip()) == 0:
+        raise ValidationError(f'unsupported color format: {color_hex}')
+
+    if color_space in [ColorSpace.RGB, ColorSpace.HSB]:
+        if len(color_hex) == 6:
+            # * 257 to convert to 32-bit color space
+            return [
+                int(color_hex[0:2], base=16) * 257,
+                int(color_hex[2:4], base=16) * 257,
+                int(color_hex[4:6], base=16) * 257,
+                0
+            ]
+
+        if len(color_hex) == 12:
+            return [
+                int(color_hex[0:4], base=16),
+                int(color_hex[4:8], base=16),
+                int(color_hex[8:12], base=16),
+                0
+            ]
+
+        raise ValidationError(f'unsupported color format: {color_hex}')
+
+    if color_space is ColorSpace.CMYK:
+        if len(color_hex) == 8:
+            # * 257 to convert to 32-bit color space
+            return [
+                int(color_hex[0:2], base=16) * 257,
+                int(color_hex[2:4], base=16) * 257,
+                int(color_hex[4:6], base=16) * 257,
+                int(color_hex[6:8], base=16) * 257
+            ]
+
+        if len(color_hex) == 16:
+            return [
+                int(color_hex[0:4], base=16),
+                int(color_hex[4:8], base=16),
+                int(color_hex[8:12], base=16),
+                int(color_hex[12:16], base=16)
+            ]
+
+        raise ValidationError(f'unsupported color format: {color_hex}')
+
+    if color_space is ColorSpace.GRAYSCALE:
+        if len(color_hex) == 2:
+            # * 257 to convert to 32-bit color space
+            gray = int(color_hex[0:2], base=16) * 257
+        elif len(color_hex) == 4:
+            gray = int(color_hex[0:4], base=16)
+        else:
+            raise ValidationError(f'unsupported color format: {color_hex}')
+
+        if gray > 10000:
+            raise ValidationError(f'invalid grayscale value: {color_hex}')
+
+        return [
+            gray,
+            0,
+            0,
+            0
+        ]
+
+    raise ValidationError(f'unsupported color space: {str(color_space)}')
 class Swatch:
     """swatch console command"""
 
-    def __init__(self, verbose: bool = False) -> None: 
+    def __init__(self, verbose: bool = False) -> None:
 
         if verbose:
             log_level = logging.DEBUG
@@ -59,197 +246,16 @@ class Swatch:
 
         self.log = logging.getLogger("__name__")
 
-        h1 = logging.StreamHandler(sys.stdout)
-        h1.setLevel(logging.DEBUG)
-        h1.addFilter(lambda record: record.levelno <= logging.INFO)
-        self.log.addHandler(h1)
+        message_handler = logging.StreamHandler(sys.stdout)
+        message_handler.setLevel(logging.DEBUG)
+        message_handler.addFilter(lambda record: record.levelno <= logging.INFO)
+        self.log.addHandler(message_handler)
 
-        h2 = logging.StreamHandler(sys.stderr)
-        h2.setLevel(logging.WARNING)
-        self.log.addHandler(h2)
+        error_handler = logging.StreamHandler(sys.stderr)
+        error_handler.setLevel(logging.WARNING)
+        self.log.addHandler(error_handler)
 
-    def validate_color_space(self, color_space: ColorSpace) -> None:
-        """Validate provided `color_space`.
-
-        Args:
-            color_space: color space to be checked.
-
-        Raises:
-            ValidationError: Is raised if provided color space is not supported.
-        """
-        if color_space.supported is False:
-            raise ValidationError(f'unsupported color space: {str(color_space)}')
-
-    def raw_color_to_hex(
-        self, color_space: ColorSpace, component_1: int, component_2: int, component_3: int, component_4: int
-    ) -> str:
-        """Combines provided color data in a HEX string representation of that color.
-
-        RGB
-            The first three components represent red, green and blue. Fourth should be 0.
-            They are full unsigned 16-bit values as in Apple's RGBColor data structure.
-            Pure red = 65535, 0, 0.
-
-        HSB
-            The first three components represent hue, saturation and brightness.
-            They are full unsigned 16-bit values as in Apple's HSVColor data structure.
-            Pure red = 0, 65535, 65535.
-
-        CMYK
-            The four components represent cyan, magenta, yellow and black. They are full
-            unsigned 16-bit values.
-            0 = 100% ink. For example, pure cyan = 0, 65535, 65535, 65535.
-
-        Grayscale
-            The first component represent the gray value, from 0...10000.
-
-        Args:
-            color_space: color space if to be checked.
-            component_1: first channel of the color for specified color space.
-            component_2: second channel of the color for specified color space.
-            component_3: third channel of the color for specified color space.
-            component_4: fourth channel of the color for specified color space.
-
-        Returns:
-            A HEX string representation of the color.
-
-        Raises:
-            ValidationError: Is raised if color components exceed expected values for
-                provided `color_space`.
-        """
-        if color_space is ColorSpace.RGB:
-            if not 0 <= component_1 <= 65535 or not 0 <= component_2 <= 65535 or \
-                not 0 <= component_3 <= 65535 or component_4 != 0:
-                raise ValidationError(
-                    f'invalid RGB value: {component_1}, {component_2}, {component_3}, {component_4}'
-                )
-
-            return f'#{component_1:04X}{component_2:04X}{component_3:04X}'
-        if color_space is ColorSpace.HSB:
-            if not 0 <= component_1 <= 65535 or not 0 <= component_2 <= 65535 or \
-                not 0 <= component_3 <= 65535 or component_4 != 0:
-                raise ValidationError(
-                    f'invalid HSB value: {component_1}, {component_2}, {component_3}, {component_4}'
-                )
-
-            return f'#{component_1:04X}{component_2:04X}{component_3:04X}'
-        if color_space is ColorSpace.CMYK:
-            if not 0 <= component_1 <= 65535 or not 0 <= component_2 <= 65535 or \
-                not 0 <= component_3 <= 65535 or not 0 <= component_4 <= 65535:
-                raise ValidationError(
-                    f'invalid CMYK value: {component_1}, {component_2}, {component_3}, {component_4}'
-                )
-
-            return f'#{component_1:04X}{component_2:04X}{component_3:04X}{component_4:04X}'
-        if color_space is ColorSpace.GRAYSCALE:
-            if not 0 <= component_1 <= 10000 or component_2 != 0 or \
-                component_3 != 0 or component_4 != 0:
-                raise ValidationError(
-                    f'invalid Grayscale value: {component_1}, {component_2}, {component_3}, {component_4}' # pylint: disable=line-too-long
-                )
-
-            return f'#{component_1:04X}'
-
-        raise ValidationError(f'unsupported color space: {str(color_space)}')
-
-    def hex_color_to_raw(self, color_space: ColorSpace, color_hex: str = "") -> List[int]:
-        """Parses provided HEX string representation of a color
-        into four element list of color components.
-
-        RGB
-            Supports both 8-bit and 16-bit per color channel, expects three channels only.
-            Leading `#` is optional. Pure red = #FFFF00000000.
-
-        HSB
-            Supports both 8-bit and 16-bit per color channel, expects three channels only.
-            Leading `#` is optional. Pure red = #00FFFF.
-
-        CMYK
-            Supports both 8-bit and 16-bit per color channel, expects four channels.
-            Leading `#` is optional. Pure cyan = 0000FFFFFFFFFFFF.
-
-        Grayscale
-            Supports both 8-bit and 16-bit for grey value, expects only one channel.
-            Leading `#` is optional. Pure black = #2710.
-
-        Args:
-            color_space: color space if to be checked.
-            color_hex: HEX string representation of a color.
-
-        Returns:
-            A four element list of color components.
-
-        Raises:
-            ValidationError: Is raised if color components exceed expected values for
-                provided `color_space`.
-        """
-        color_hex = color_hex.lstrip('#')
-
-        if len(color_hex.strip()) == 0:
-            raise ValidationError(f'unsupported color format: {color_hex}')
-
-        if color_space in [ColorSpace.RGB, ColorSpace.HSB]:
-            if len(color_hex) == 6:
-                # * 257 to convert to 32-bit color space
-                return [
-                    int(color_hex[0:2], base=16) * 257,
-                    int(color_hex[2:4], base=16) * 257,
-                    int(color_hex[4:6], base=16) * 257,
-                    0
-                ]
-
-            if len(color_hex) == 12:
-                return [
-                    int(color_hex[0:4], base=16),
-                    int(color_hex[4:8], base=16),
-                    int(color_hex[8:12], base=16),
-                    0
-                ]
-
-            raise ValidationError(f'unsupported color format: {color_hex}')
-
-        if color_space is ColorSpace.CMYK:
-            if len(color_hex) == 8:
-                # * 257 to convert to 32-bit color space
-                return [
-                    int(color_hex[0:2], base=16) * 257,
-                    int(color_hex[2:4], base=16) * 257,
-                    int(color_hex[4:6], base=16) * 257,
-                    int(color_hex[6:8], base=16) * 257
-                ]
-
-            if len(color_hex) == 16:
-                return [
-                    int(color_hex[0:4], base=16),
-                    int(color_hex[4:8], base=16),
-                    int(color_hex[8:12], base=16),
-                    int(color_hex[12:16], base=16)
-                ]
-
-            raise ValidationError(f'unsupported color format: {color_hex}')
-
-        if color_space is ColorSpace.GRAYSCALE:
-            if len(color_hex) == 2:
-                # * 257 to convert to 32-bit color space
-                gray = int(color_hex[0:2], base=16) * 257
-            elif len(color_hex) == 4:
-                gray = int(color_hex[0:4], base=16)
-            else:
-                raise ValidationError(f'unsupported color format: {color_hex}')
-
-            if gray > 10000:
-                raise ValidationError(f'invalid grayscale value: {color_hex}')
-
-            return [
-                gray,
-                0,
-                0,
-                0
-            ]
-
-        raise ValidationError(f'unsupported color space: {str(color_space)}')
-
-    def parse_aco(self, file: BufferedReader) -> List:
+    def parse_aco(self, file: BufferedReader) -> List: # pylint: disable=too-many-locals)
         """Parses the `.aco` file and returns a list of lists, were each of them contains the name,
         color space id and a HEX string representation of the colors extracted from the Color Swatch
         file.
@@ -279,7 +285,7 @@ class Swatch:
 
             for idx in range(color_count):
                 color_space = ColorSpace(int.from_bytes(file.read(2), "big"))
-                self.validate_color_space(color_space)
+                validate_color_space(color_space)
 
                 component_1 = int.from_bytes(file.read(2), "big")
                 component_2 = int.from_bytes(file.read(2), "big")
@@ -304,7 +310,7 @@ class Swatch:
 
             for idx in range(color_count):
                 color_space = ColorSpace(int.from_bytes(file.read(2), "big"))
-                self.validate_color_space(color_space)
+                validate_color_space(color_space)
 
                 component_1 = int.from_bytes(file.read(2), "big")
                 component_2 = int.from_bytes(file.read(2), "big")
@@ -312,13 +318,13 @@ class Swatch:
                 component_4 = int.from_bytes(file.read(2), "big")
 
                 name_length = int.from_bytes(file.read(4), "big")
-                name_bytes = file.read(name_length * 2 - 2) # - 2 is for omiting termination character
+                name_bytes = file.read(name_length * 2 - 2) # - 2 to omit termination character
                 name = name_bytes.decode("utf-16-be")
 
                 # droping the string termination character
                 file.read(2)
 
-                color_hex = self.raw_color_to_hex(
+                color_hex = raw_color_to_hex(
                     color_space, component_1, component_2, component_3, component_4
                 )
 
@@ -429,7 +435,7 @@ class Swatch:
                 self.log.debug("   Color space: %s", color_space)
                 self.log.debug("   Color: %d", color_hex)
 
-                color_components = self.hex_color_to_raw(color_space, color_hex)
+                color_components = hex_color_to_raw(color_space, color_hex)
 
                 colors.append([
                     name,
@@ -448,7 +454,7 @@ class Swatch:
 
         return colors
 
-    def save_aco(self, colors_data: List, file: BufferedWriter) -> None:
+    def save_aco(self, colors_data: List, file: BufferedWriter) -> None: # pylint: disable=too-many-locals)
         """Saves provided color data into a `.aco` file.
 
         Args:

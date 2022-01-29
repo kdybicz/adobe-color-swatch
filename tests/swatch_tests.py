@@ -2,7 +2,7 @@
 from contextlib import nullcontext as does_not_raise
 import pytest
 from swatch.swatch import ColorSpace, ValidationError, \
-    validate_color_space, raw_color_to_hex, hex_color_to_raw
+    hex_color_to_raw, raw_color_to_hex, validate_color_space
 
 @pytest.mark.parametrize(
     "color_space,expected",
@@ -85,7 +85,9 @@ def test_raw_color_to_hex_for_rgb_invalid_values(
 ):
     # expect
     with pytest.raises(ValidationError, match=r"invalid RGB value:"):
-        raw_color_to_hex(ColorSpace.RGB, component_1, component_2, component_3, component_4)
+        raw_color_to_hex(
+            ColorSpace.RGB, component_1, component_2, component_3, component_4
+        )
 
 @pytest.mark.parametrize(
     "component_1,component_2,component_3,component_4",
@@ -104,7 +106,9 @@ def test_raw_color_to_hex_for_hsb_invalid_values(
 ):
     # expect
     with pytest.raises(ValidationError, match=r"invalid HSB value:"):
-        raw_color_to_hex(ColorSpace.HSB, component_1, component_2, component_3, component_4)
+        raw_color_to_hex(
+            ColorSpace.HSB, component_1, component_2, component_3, component_4
+        )
 
 @pytest.mark.parametrize(
     "component_1,component_2,component_3,component_4",
@@ -124,7 +128,9 @@ def test_raw_color_to_hex_for_cmyk_invalid_values(
 ):
     # expect
     with pytest.raises(ValidationError, match=r"invalid CMYK value:"):
-        raw_color_to_hex(ColorSpace.CMYK, component_1, component_2, component_3, component_4)
+        raw_color_to_hex(
+            ColorSpace.CMYK, component_1, component_2, component_3, component_4
+        )
 
 @pytest.mark.parametrize(
     "component_1,component_2,component_3,component_4",
@@ -139,7 +145,9 @@ def test_raw_color_to_hex_for_grayscale_invalid_values(
 ):
     # expect
     with pytest.raises(ValidationError, match=r"invalid Grayscale value:"):
-        raw_color_to_hex(ColorSpace.GRAYSCALE, component_1, component_2, component_3, component_4)
+        raw_color_to_hex(
+            ColorSpace.GRAYSCALE, component_1, component_2, component_3, component_4
+        )
 
 @pytest.mark.parametrize(
     "color_space,component_1,component_2,component_3,component_4,expected",
