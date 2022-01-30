@@ -1,3 +1,5 @@
+[![Tests](https://github.com/kdybicz/adobe-swatch-generator/actions/workflows/tests.yml/badge.svg)](https://github.com/kdybicz/adobe-swatch-generator/actions/workflows/tests.yml)
+
 # Adobe Color Swatch Generator
 
 ## Description
