@@ -8,6 +8,16 @@ import sys
 import traceback
 from typing import List, Optional
 
+log = logging.getLogger("__name__")
+
+message_handler = logging.StreamHandler(sys.stdout)
+message_handler.setLevel(logging.DEBUG)
+message_handler.addFilter(lambda record: record.levelno <= logging.INFO)
+log.addHandler(message_handler)
+
+error_handler = logging.StreamHandler(sys.stderr)
+error_handler.setLevel(logging.WARNING)
+log.addHandler(error_handler)
 @unique
 class ColorSpace(Enum):
     """
@@ -232,306 +242,284 @@ def hex_color_to_raw(
         ]
 
     raise ValidationError(f'unsupported color space: {str(color_space)}')
-class Swatch:
-    """swatch console command"""
 
-    def __init__(self, verbose: bool = False) -> None:
+def parse_aco(file: BufferedReader) -> List: # pylint: disable=too-many-locals)
+    """Parses the `.aco` file and returns a list of lists, were each of them contains the name,
+    color space id and a HEX string representation of the colors extracted from the Color Swatch
+    file.
 
-        if verbose:
-            log_level = logging.DEBUG
-        else:
-            log_level = logging.INFO
+    Args:
+        file: handle to the `.aco` file to be parsed.
 
-        logging.basicConfig(level=log_level, format='%(message)s', handlers=[])
+    Returns:
+        A list of lists, were each of them contains the name, color space id and a HEX string
+        representation of the colors extracted from the Color Swatch file.
 
-        self.log = logging.getLogger("__name__")
+    Raises:
+        ValidationError: Is raised if parsed file contains unexpected data.
+    """
+    colors = []
 
-        message_handler = logging.StreamHandler(sys.stdout)
-        message_handler.setLevel(logging.DEBUG)
-        message_handler.addFilter(lambda record: record.levelno <= logging.INFO)
-        self.log.addHandler(message_handler)
+    try:
+        # Version 1
+        log.debug("\nParsing version 1 section")
 
-        error_handler = logging.StreamHandler(sys.stderr)
-        error_handler.setLevel(logging.WARNING)
-        self.log.addHandler(error_handler)
+        version_byte = int.from_bytes(file.read(2), "big")
+        if version_byte != 1:
+            raise ValidationError("Version byte should be 1")
 
-    def parse_aco(self, file: BufferedReader) -> List: # pylint: disable=too-many-locals)
-        """Parses the `.aco` file and returns a list of lists, were each of them contains the name,
-        color space id and a HEX string representation of the colors extracted from the Color Swatch
-        file.
+        color_count = int.from_bytes(file.read(2), "big")
+        log.debug("Colors found: %d", color_count)
 
-        Args:
-            file: handle to the `.aco` file to be parsed.
+        for idx in range(color_count):
+            color_space = ColorSpace(int.from_bytes(file.read(2), "big"))
+            validate_color_space(color_space)
 
-        Returns:
-            A list of lists, were each of them contains the name, color space id and a HEX string
-            representation of the colors extracted from the Color Swatch file.
+            component_1 = int.from_bytes(file.read(2), "big")
+            component_2 = int.from_bytes(file.read(2), "big")
+            component_3 = int.from_bytes(file.read(2), "big")
+            component_4 = int.from_bytes(file.read(2), "big")
 
-        Raises:
-            ValidationError: Is raised if parsed file contains unexpected data.
-        """
-        colors = []
+            log.debug(" - ID: %d", idx)
+            log.debug("   Color space: %s", color_space)
+            log.debug(
+            "   Components: %d %d %d %d", component_1, component_2, component_3, component_4
+            )
 
-        try:
-            # Version 1
-            self.log.debug("\nParsing version 1 section")
+        # Version 2
+        log.debug("\nParsing version 2 section")
 
-            version_byte = int.from_bytes(file.read(2), "big")
-            if version_byte != 1:
-                raise ValidationError("Version byte should be 1")
+        version_byte = int.from_bytes(file.read(2), "big")
+        if version_byte != 2:
+            raise ValidationError("Version byte should be 2")
 
-            color_count = int.from_bytes(file.read(2), "big")
-            self.log.debug("Colors found: %d", color_count)
+        color_count = int.from_bytes(file.read(2), "big")
+        log.debug("Colors found: %d", color_count)
 
-            for idx in range(color_count):
-                color_space = ColorSpace(int.from_bytes(file.read(2), "big"))
-                validate_color_space(color_space)
+        for idx in range(color_count):
+            color_space = ColorSpace(int.from_bytes(file.read(2), "big"))
+            validate_color_space(color_space)
 
-                component_1 = int.from_bytes(file.read(2), "big")
-                component_2 = int.from_bytes(file.read(2), "big")
-                component_3 = int.from_bytes(file.read(2), "big")
-                component_4 = int.from_bytes(file.read(2), "big")
+            component_1 = int.from_bytes(file.read(2), "big")
+            component_2 = int.from_bytes(file.read(2), "big")
+            component_3 = int.from_bytes(file.read(2), "big")
+            component_4 = int.from_bytes(file.read(2), "big")
 
-                self.log.debug(" - ID: %d", idx)
-                self.log.debug("   Color space: %s", color_space)
-                self.log.debug(
-                "   Components: %d %d %d %d", component_1, component_2, component_3, component_4
-                )
+            name_length = int.from_bytes(file.read(4), "big")
+            name_bytes = file.read(name_length * 2 - 2) # - 2 to omit termination character
+            name = name_bytes.decode("utf-16-be")
 
-            # Version 2
-            self.log.debug("\nParsing version 2 section")
+            # droping the string termination character
+            file.read(2)
 
-            version_byte = int.from_bytes(file.read(2), "big")
-            if version_byte != 2:
-                raise ValidationError("Version byte should be 2")
+            color_hex = raw_color_to_hex(
+                color_space, component_1, component_2, component_3, component_4
+            )
 
-            color_count = int.from_bytes(file.read(2), "big")
-            self.log.debug("Colors found: %d", color_count)
+            log.debug(" - ID: %d", idx)
+            log.debug("   Color name: %s", name)
+            log.debug("   Color space: %s", color_space)
+            log.debug("   Color: %s", color_hex)
 
-            for idx in range(color_count):
-                color_space = ColorSpace(int.from_bytes(file.read(2), "big"))
-                validate_color_space(color_space)
+            colors.append([name, color_space, color_hex])
 
-                component_1 = int.from_bytes(file.read(2), "big")
-                component_2 = int.from_bytes(file.read(2), "big")
-                component_3 = int.from_bytes(file.read(2), "big")
-                component_4 = int.from_bytes(file.read(2), "big")
+    except ValidationError as err:
+        log.error("\nError while parsing .aco file: %s", err.message)
 
-                name_length = int.from_bytes(file.read(4), "big")
-                name_bytes = file.read(name_length * 2 - 2) # - 2 to omit termination character
-                name = name_bytes.decode("utf-16-be")
+    finally:
+        file.close()
 
-                # droping the string termination character
-                file.read(2)
+    return colors
 
-                color_hex = raw_color_to_hex(
-                    color_space, component_1, component_2, component_3, component_4
-                )
+def save_csv(colors_data: List, file: TextIOWrapper) -> None:
+    """Saves provided color data into a `.csv` file.
 
-                self.log.debug(" - ID: %d", idx)
-                self.log.debug("   Color name: %d", name)
-                self.log.debug("   Color space: %s", color_space)
-                self.log.debug("   Color: %d", color_hex)
+    Args:
+        colors_data: list of lists, were each of them contains the name, color space id and
+            a HEX string representation of a color.
+        file: handle to the `.csv` file to be saved.
+    """
+    try:
+        file.write("name,space_id,color")
+        file.write("\n")
 
-                colors.append([name, color_space, color_hex])
+        for color_data in colors_data:
+            name = color_data[0]
+            file.write(name)
+            file.write(",")
 
-        except ValidationError as err:
-            self.log.error("\nError while parsing .aco file: %s", err.message)
+            color_space = color_data[1]
+            color_space_id = str(color_space.value)
+            file.write(color_space_id)
+            file.write(",")
 
-        finally:
-            file.close()
-
-        return colors
-
-    def save_csv(self, colors_data: List, file: TextIOWrapper) -> None:
-        """Saves provided color data into a `.csv` file.
-
-        Args:
-            colors_data: list of lists, were each of them contains the name, color space id and
-                a HEX string representation of a color.
-            file: handle to the `.csv` file to be saved.
-        """
-        try:
-            file.write("name,space_id,color")
+            color_hex = str(color_data[2])
+            file.write(color_hex)
             file.write("\n")
 
-            for color_data in colors_data:
-                name = color_data[0]
-                file.write(name)
-                file.write(",")
+    except OSError:
+        log.error("\nError while saving .csv file")
+        log.error(traceback.format_exc())
 
-                color_space = color_data[1]
-                color_space_id = str(color_space.value)
-                file.write(color_space_id)
-                file.write(",")
+    finally:
+        file.close()
 
-                color_hex = str(color_data[2])
-                file.write(color_hex)
-                file.write("\n")
+def extract_aco(input_file: BufferedReader, output_file: TextIOWrapper) -> None:
+    """Extracts data from `.aco` file and stores them in the `.csv` file.
 
-        except OSError:
-            self.log.error("\nError while saving .csv file")
-            self.log.error(traceback.format_exc())
+    Args:
+        input_file: handle to the `.aco` file to be parsed.
+        output_file: handle to the `.csv` file to be saved.
+    """
+    log.info("\nExtracting \"%s\" to \"%s\"", input_file.name, output_file.name)
 
-        finally:
-            file.close()
+    colors_data = parse_aco(input_file)
 
-    def extract_aco(self, input_file: BufferedReader, output_file: TextIOWrapper) -> None:
-        """Extracts data from `.aco` file and stores them in the `.csv` file.
+    save_csv(colors_data, output_file)
 
-        Args:
-            input_file: handle to the `.aco` file to be parsed.
-            output_file: handle to the `.csv` file to be saved.
-        """
-        self.log.info("\nExtracting \"%s\" to \"%s\"", input_file.name, output_file.name)
+def parse_csv(file: TextIOWrapper) -> List:
+    """Parses the `.csv` file and returns a list of lists, were each of them contains the name,
+    color space id and four color components.
 
-        colors_data = self.parse_aco(input_file)
+    Args:
+        file: handle to the `.csv` file to be parsed.
 
-        self.save_csv(colors_data, output_file)
+    Returns:
+        A list of lists, were each of them contains the name, color space id and four color
+        components.
 
-    def parse_csv(self, file: TextIOWrapper) -> List:
-        """Parses the `.csv` file and returns a list of lists, were each of them contains the name,
-        color space id and four color components.
+    Raises:
+        ValidationError: Is raised if parsed file contains unexpected data.
+    """
+    colors = []
 
-        Args:
-            file: handle to the `.csv` file to be parsed.
+    try:
+        # Parse
+        log.debug("\nParsing file")
 
-        Returns:
-            A list of lists, were each of them contains the name, color space id and four color
-            components.
+        header = file.readline()
+        if header != "name,space_id,color\n":
+            raise ValidationError("Invalid file header")
 
-        Raises:
-            ValidationError: Is raised if parsed file contains unexpected data.
-        """
-        colors = []
+        color_lines = file.readlines()
 
-        try:
-            # Parse
-            self.log.debug("\nParsing file")
+        log.debug("Colors found: %d", len(color_lines))
 
-            header = file.readline()
-            if header != "name,space_id,color\n":
-                raise ValidationError("Invalid file header")
+        for color_line in color_lines:
+            line_elements = color_line.split(",")
+            if len(line_elements) != 3:
+                raise ValidationError("Color line should contain 3 elements")
 
-            color_lines = file.readlines()
+            name = line_elements[0]
+            if len(name.strip()) == 0:
+                raise ValidationError("Color name must be provided")
 
-            self.log.debug("Colors found: %d", len(color_lines))
+            color_space_id = int(line_elements[1])
+            color_space = ColorSpace(color_space_id)
 
-            for color_line in color_lines:
-                line_elements = color_line.split(",")
-                if len(line_elements) != 3:
-                    raise ValidationError("Color line should contain 3 elements")
+            color_hex = line_elements[2].strip()
 
-                name = line_elements[0]
-                if len(name.strip()) == 0:
-                    raise ValidationError("Color name must be provided")
+            log.debug(" - Color name: %s", name)
+            log.debug("   Color space: %s", color_space)
+            log.debug("   Color: %s", color_hex)
 
-                color_space_id = int(line_elements[1])
-                color_space = ColorSpace(color_space_id)
+            color_components = hex_color_to_raw(color_space, color_hex)
 
-                color_hex = line_elements[2].strip()
+            colors.append([
+                name,
+                color_space,
+                color_components[0],
+                color_components[1],
+                color_components[2],
+                color_components[3]
+            ])
 
-                self.log.debug(" - Color name: %d", name)
-                self.log.debug("   Color space: %s", color_space)
-                self.log.debug("   Color: %d", color_hex)
+    except ValidationError as err:
+        log.info("\nError while parsing .csv file: %s", err.message)
 
-                color_components = hex_color_to_raw(color_space, color_hex)
+    finally:
+        file.close()
 
-                colors.append([
-                    name,
-                    color_space,
-                    color_components[0],
-                    color_components[1],
-                    color_components[2],
-                    color_components[3]
-                ])
+    return colors
 
-        except ValidationError as err:
-            self.log.info("\nError while parsing .csv file: %s", err.message)
+def save_aco(colors_data: List, file: BufferedWriter) -> None: # pylint: disable=too-many-locals)
+    """Saves provided color data into a `.aco` file.
 
-        finally:
-            file.close()
+    Args:
+        colors_data: list of lists, were each of them contains the name, color space id and four
+        color components.
+        file: handle to the `.aco` file to be saved.
+    """
+    try:
+        # Version 1
+        version = 1
+        file.write(version.to_bytes(2, "big"))
 
-        return colors
+        color_count = len(colors_data)
+        file.write(color_count.to_bytes(2, "big"))
 
-    def save_aco(self, colors_data: List, file: BufferedWriter) -> None: # pylint: disable=too-many-locals)
-        """Saves provided color data into a `.aco` file.
+        for color_data in colors_data:
+            color_space = color_data[1]
+            color_space_id = color_space.value
+            file.write(color_space_id.to_bytes(2, "big"))
 
-        Args:
-            colors_data: list of lists, were each of them contains the name, color space id and four
-            color components.
-            file: handle to the `.aco` file to be saved.
-        """
-        try:
-            # Version 1
-            version = 1
-            file.write(version.to_bytes(2, "big"))
+            component_1 = color_data[2]
+            file.write(component_1.to_bytes(2, "big"))
+            component_2 = color_data[3]
+            file.write(component_2.to_bytes(2, "big"))
+            component_3 = color_data[4]
+            file.write(component_3.to_bytes(2, "big"))
+            component_4 = color_data[5]
+            file.write(component_4.to_bytes(2, "big"))
 
-            color_count = len(colors_data)
-            file.write(color_count.to_bytes(2, "big"))
+        # Version 2
+        version = 2
+        file.write(version.to_bytes(2, "big"))
 
-            for color_data in colors_data:
-                color_space = color_data[1]
-                color_space_id = color_space.value
-                file.write(color_space_id.to_bytes(2, "big"))
+        color_count = len(colors_data)
+        file.write(color_count.to_bytes(2, "big"))
 
-                component_1 = color_data[2]
-                file.write(component_1.to_bytes(2, "big"))
-                component_2 = color_data[3]
-                file.write(component_2.to_bytes(2, "big"))
-                component_3 = color_data[4]
-                file.write(component_3.to_bytes(2, "big"))
-                component_4 = color_data[5]
-                file.write(component_4.to_bytes(2, "big"))
+        for color_data in colors_data:
+            color_space = color_data[1]
+            color_space_id = color_space.value
+            file.write(color_space_id.to_bytes(2, "big"))
 
-            # Version 2
-            version = 2
-            file.write(version.to_bytes(2, "big"))
+            component_1 = color_data[2]
+            file.write(component_1.to_bytes(2, "big"))
+            component_2 = color_data[3]
+            file.write(component_2.to_bytes(2, "big"))
+            component_3 = color_data[4]
+            file.write(component_3.to_bytes(2, "big"))
+            component_4 = color_data[5]
+            file.write(component_4.to_bytes(2, "big"))
 
-            color_count = len(colors_data)
-            file.write(color_count.to_bytes(2, "big"))
+            color_name = color_data[0]
 
-            for color_data in colors_data:
-                color_space = color_data[1]
-                color_space_id = color_space.value
-                file.write(color_space_id.to_bytes(2, "big"))
+            color_name_length = len(color_name) + 1 # + 1 is for termination character
+            file.write(color_name_length.to_bytes(4, "big"))
 
-                component_1 = color_data[2]
-                file.write(component_1.to_bytes(2, "big"))
-                component_2 = color_data[3]
-                file.write(component_2.to_bytes(2, "big"))
-                component_3 = color_data[4]
-                file.write(component_3.to_bytes(2, "big"))
-                component_4 = color_data[5]
-                file.write(component_4.to_bytes(2, "big"))
+            color_name_bytes = bytes(color_name, "utf-16-be")
+            file.write(color_name_bytes)
 
-                color_name = color_data[0]
+            termination_char = 0
+            file.write(termination_char.to_bytes(2, "big"))
 
-                color_name_length = len(color_name) + 1 # + 1 is for termination character
-                file.write(color_name_length.to_bytes(4, "big"))
+    except OSError:
+        log.error("\nError while saving .aco file")
+        log.error(traceback.format_exc())
 
-                color_name_bytes = bytes(color_name, "utf-16-be")
-                file.write(color_name_bytes)
+    finally:
+        file.close()
 
-                termination_char = 0
-                file.write(termination_char.to_bytes(2, "big"))
+def generate_aco(input_file: TextIOWrapper, output_file: BufferedWriter) -> None:
+    """Generating`.aco` file based on the data from the `.csv` file.
 
-        except OSError:
-            self.log.error("\nError while saving .aco file")
-            self.log.error(traceback.format_exc())
+    Args:
+        input_file: handle to the `.csv` file to be parsed.
+        output_file: handle to the `.aco` file to be saved.
+    """
+    log.info("\nGenerating \"%s\" to \"%s\"", input_file.name, output_file.name)
 
-        finally:
-            file.close()
+    colors_data = parse_csv(input_file)
 
-    def generate_aco(self, input_file: TextIOWrapper, output_file: BufferedWriter) -> None:
-        """Generating`.aco` file based on the data from the `.csv` file.
-
-        Args:
-            input_file: handle to the `.csv` file to be parsed.
-            output_file: handle to the `.aco` file to be saved.
-        """
-        self.log.info("\nGenerating \"%s\" to \"%s\"", input_file.name, output_file.name)
-
-        colors_data = self.parse_csv(input_file)
-
-        self.save_aco(colors_data, output_file)
+    save_aco(colors_data, output_file)

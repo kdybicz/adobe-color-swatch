@@ -2,10 +2,11 @@
 CLI wrapper for swatch package
 """
 from argparse import ArgumentParser, FileType, Namespace
+import logging
 import sys
 from typing import Tuple
 
-from swatch.swatch import Swatch
+from swatch.swatch import extract_aco, generate_aco
 
 def arguments() -> Tuple[ArgumentParser, Namespace]:
     """Define CLI parameters"""
@@ -76,12 +77,19 @@ def main() -> None:
 
     parser, args = arguments()
 
-    if args.subCommand == "extract":
-        cli = Swatch(args.verbose)
-        cli.extract_aco(args.input, args.output)
-    elif args.subCommand == "generate":
-        cli = Swatch(args.verbose)
-        cli.generate_aco(args.input, args.output)
-    else:
-        parser.print_help()
-        sys.exit(1)
+    if args.subCommand is not None:
+        if args.verbose:
+            log_level = logging.DEBUG
+        else:
+            log_level = logging.INFO
+
+        logging.basicConfig(level=log_level, format='%(message)s', handlers=[])
+
+        if args.subCommand == "extract":
+            return extract_aco(args.input, args.output)
+
+        if args.subCommand == "generate":
+            return generate_aco(args.input, args.output)
+
+    parser.print_help()
+    sys.exit(1)
