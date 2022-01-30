@@ -1,8 +1,10 @@
 # pylint: disable=missing-function-docstring,missing-module-docstring,too-many-arguments
 from contextlib import nullcontext as does_not_raise
+from pathlib import Path
 import pytest
 from swatch.swatch import ColorSpace, ValidationError, \
-    hex_color_to_raw, raw_color_to_hex, validate_color_space
+    hex_color_to_raw, parse_aco, parse_csv, raw_color_to_hex, validate_color_space
+from unittest import mock
 
 @pytest.mark.parametrize(
     "color_space,expected",
@@ -268,6 +270,9 @@ def test_hex_color_to_raw_for_cmyk(color_hex, exception, expected):
         ('0000', does_not_raise(), [0, 0, 0, 0]),
         ('0F0F', does_not_raise(), [3855, 0, 0, 0]),
         ('2710', does_not_raise(), [10000, 0, 0, 0]),
+        ('#2711', pytest.raises(
+            ValidationError, match=r"invalid grayscale value: 2711"), []
+        ),
         ('# ', pytest.raises(
             ValidationError, match=r"unsupported color format:"), []
         ),
@@ -289,3 +294,49 @@ def test_hex_color_to_raw_for_grayscale(color_hex, exception, expected):
     # expect
     with exception:
         assert hex_color_to_raw(ColorSpace.GRAYSCALE, color_hex) == expected
+
+def test_parse_aco_succeed():
+    # given
+    base_path = Path(__file__).parent
+    file_path = (base_path / "../examples/utf.aco").resolve()
+
+    # when
+    with open(file_path, "rb") as f:
+        color_data = parse_aco(f)    
+    # then
+    assert color_data == [
+        ["Zażółć gęślą jaźń", ColorSpace.HSB, "#2A2AA8A8E3E3"],
+        ["チェリー", ColorSpace.HSB,"#F2F2EAEAAFAF"],
+        ["a", ColorSpace.HSB, "#F2F20000FFFF"]
+    ]
+
+def test_parse_aco_does_not_fail_on_invalid_file():
+    # given
+    base_path = Path(__file__).parent
+    file_path = (base_path / "../examples/utf.csv").resolve()
+
+    # when
+    with open(file_path, "rb") as f:
+        color_data = parse_aco(f)    
+    # then
+    assert color_data == []
+
+def test_parse_csv_succeed():
+    # given
+    base_path = Path(__file__).parent
+    file_path = (base_path / "../examples/utf.csv").resolve()
+
+    # when
+    with open(file_path, "r") as f:
+        color_data = parse_csv(f)    
+    # then
+    assert color_data == [
+        ["Zażółć gęślą jaźń", ColorSpace.HSB, 10794, 43176, 58339, 0],
+        ["チェリー", ColorSpace.HSB, 62194, 60138, 44975, 0],
+        ["a", ColorSpace.HSB,  62194, 0, 65535, 0]
+    ]
+
+@mock.patch("builtins.open", create=True)
+def test_parse_csv_does_not_fail_on_invalid_file(file):
+    # expect
+    assert parse_csv(file)    == []

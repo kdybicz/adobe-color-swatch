@@ -17,7 +17,7 @@ setup:
 
 test: clean
 	$(pipenv) pytest
-# ; --cov=src --cov-report=term-missing --cov-fail-under 95
+# ; --cov=swatch --cov-report=term-missing --cov-fail-under 95
 
 lint:
 	$(pipenv) pylint swatch/ tests/
