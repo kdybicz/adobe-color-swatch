@@ -1,4 +1,4 @@
-[![Tests](https://github.com/kdybicz/adobe-swatch-generator/actions/workflows/tests.yml/badge.svg)](https://github.com/kdybicz/adobe-swatch-generator/actions/workflows/tests.yml)
+[![Tests](https://github.com/kdybicz/adobe-color-swatch/actions/workflows/tests.yml/badge.svg)](https://github.com/kdybicz/adobe-color-swatch/actions/workflows/tests.yml)
 
 # Adobe Color Swatch Generator
 
@@ -10,7 +10,7 @@ It can also work in revers, so generate an `.aco` file based on data from a `.cs
 ## Installation
 
 ```
-pip3 install git+https://github.com/kdybicz/adobe-swatch-generator
+pip3 install git+https://github.com/kdybicz/adobe-color-swatch
 ```
 
 ## Usage

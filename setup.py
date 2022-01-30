@@ -13,6 +13,6 @@ setup(
     packages=find_packages(exclude=["tests", "tests.*"]),
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/kdybicz/adobe-swatch-generator",
+    url="https://github.com/kdybicz/adobe-color-swatch",
     description="Simple Python script to extract and generate Adobe Color Swatch (.aco) files."
 )
