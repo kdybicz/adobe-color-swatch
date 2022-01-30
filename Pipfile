@@ -7,6 +7,10 @@ name = "pypi"
 
 [dev-packages]
 pytest = "*"
+pytest-cov = "*"
+pylint = "*"
+mypy = "*"
+codecov = "*"
 
 [requires]
 python_version = "3.9"
