@@ -1,10 +1,10 @@
 # pylint: disable=missing-function-docstring,missing-module-docstring,too-many-arguments
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
+from unittest import mock
 import pytest
 from swatch.swatch import ColorSpace, ValidationError, \
     hex_color_to_raw, parse_aco, parse_csv, raw_color_to_hex, validate_color_space
-from unittest import mock
 
 @pytest.mark.parametrize(
     "color_space,expected",
@@ -295,14 +295,42 @@ def test_hex_color_to_raw_for_grayscale(color_hex, exception, expected):
     with exception:
         assert hex_color_to_raw(ColorSpace.GRAYSCALE, color_hex) == expected
 
+@pytest.mark.parametrize(
+    "color_space,expected",
+    [
+        (ColorSpace.PANTONE, pytest.raises(
+            ValidationError, match="unsupported color space: Pantone matching system")
+        ),
+        (ColorSpace.FOCOLTONE, pytest.raises(
+            ValidationError, match="unsupported color space: Focoltone colour system")
+        ),
+        (ColorSpace.TRUMATCH, pytest.raises(
+            ValidationError, match="unsupported color space: Trumatch color")
+        ),
+        (ColorSpace.TOYO, pytest.raises(
+            ValidationError, match="unsupported color space: Toyo 88 colorfinder 1050")
+        ),
+        (ColorSpace.LAB, pytest.raises(
+            ValidationError, match="unsupported color space: Lab")
+        ),
+        (ColorSpace.HKS, pytest.raises(
+            ValidationError, match="unsupported color space: HKS colors")
+        ),
+    ],
+)
+def test_hex_color_to_raw_for_unsupported(color_space, expected):
+    # expect
+    with expected:
+        hex_color_to_raw(color_space, "#000000")
+
 def test_parse_aco_succeed():
     # given
     base_path = Path(__file__).parent
     file_path = (base_path / "../examples/utf.aco").resolve()
 
     # when
-    with open(file_path, "rb") as f:
-        color_data = parse_aco(f)    
+    with open(file_path, "rb") as file:
+        color_data = parse_aco(file)
     # then
     assert color_data == [
         ["Zażółć gęślą jaźń", ColorSpace.HSB, "#2A2AA8A8E3E3"],
@@ -316,10 +344,10 @@ def test_parse_aco_does_not_fail_on_invalid_file():
     file_path = (base_path / "../examples/utf.csv").resolve()
 
     # when
-    with open(file_path, "rb") as f:
-        color_data = parse_aco(f)    
+    with open(file_path, "rb") as file:
+        color_data = parse_aco(file)
     # then
-    assert color_data == []
+    assert not color_data
 
 def test_parse_csv_succeed():
     # given
@@ -327,8 +355,8 @@ def test_parse_csv_succeed():
     file_path = (base_path / "../examples/utf.csv").resolve()
 
     # when
-    with open(file_path, "r") as f:
-        color_data = parse_csv(f)    
+    with open(file_path, "r", encoding="utf-8") as file:
+        color_data = parse_csv(file)
     # then
     assert color_data == [
         ["Zażółć gęślą jaźń", ColorSpace.HSB, 10794, 43176, 58339, 0],
@@ -339,4 +367,4 @@ def test_parse_csv_succeed():
 @mock.patch("builtins.open", create=True)
 def test_parse_csv_does_not_fail_on_invalid_file(file):
     # expect
-    assert parse_csv(file)    == []
+    assert not parse_csv(file)
