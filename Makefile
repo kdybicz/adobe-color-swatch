@@ -1,4 +1,4 @@
-pipenv          := pipenv run
+.PHONY: clean-pyc clean-test clean setup test coverage lint mypy check
 
 clean-pyc:
 	find . -name '*.pyc' -exec rm -f {} +
@@ -16,15 +16,15 @@ setup:
 	pipenv install --dev
 
 test: clean
-	$(pipenv) pytest
+	pipenv run pytest
 
 coverage: clean
-	$(pipenv) pytest --cov=swatch --cov-report=term-missing --cov-fail-under 95
+	pipenv run pytest --cov=swatch --cov-report=term-missing --cov-fail-under 95
 
 lint:
-	$(pipenv) pylint swatch/ tests/
+	pipenv run pylint swatch/ tests/
 
 mypy:
-	${pipenv} mypy swatch
+	pipenv run mypy swatch
 
 check: test lint mypy

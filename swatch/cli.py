@@ -14,7 +14,7 @@ def arguments() -> Tuple[ArgumentParser, Namespace]:
     parser = ArgumentParser(
         description="Adobe Color Swatch generator and parser"
     )
-    subparsers = parser.add_subparsers(dest="subCommand")
+    subparsers = parser.add_subparsers(dest="sub_command")
 
     # create the parser for the "extract" command
     extract_parser = subparsers.add_parser(
@@ -77,7 +77,7 @@ def main() -> None:
 
     parser, args = arguments()
 
-    if args.subCommand is not None:
+    if args.sub_command is not None:
         if args.verbose:
             log_level = logging.DEBUG
         else:
@@ -85,10 +85,10 @@ def main() -> None:
 
         logging.basicConfig(level=log_level, format='%(message)s', handlers=[])
 
-        if args.subCommand == "extract":
+        if args.sub_command == "extract":
             return extract_aco(args.input, args.output)
 
-        if args.subCommand == "generate":
+        if args.sub_command == "generate":
             return generate_aco(args.input, args.output)
 
     parser.print_help()
