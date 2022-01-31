@@ -1,4 +1,5 @@
 [![Tests](https://github.com/kdybicz/adobe-color-swatch/actions/workflows/tests.yml/badge.svg)](https://github.com/kdybicz/adobe-color-swatch/actions/workflows/tests.yml)
+[![CodeQL](https://github.com/kdybicz/adobe-color-swatch/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/kdybicz/adobe-color-swatch/actions/workflows/codeql-analysis.yml)
 
 # Adobe Color Swatch
 
