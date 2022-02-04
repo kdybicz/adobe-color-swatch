@@ -6,7 +6,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.9]
+        python-version: [3.7, 3.8, 3.9, 3.10]
 
     steps:
       - name: checkout
@@ -17,22 +17,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
-        uses: VaultVulp/action-pipenv@v2.0.1
+      - name: Running tox
         with:
-          command: install -d
-
-      - name: Run tests
-        uses: VaultVulp/action-pipenv@v2.0.1
-        with:
-          command: run pytest
-
-      - name: Run linter
-        uses: VaultVulp/action-pipenv@v2.0.1
-        with:
-          command: run pylint swatch/ tests/ --reports=y
-
-      - name: Run type checks
-        uses: VaultVulp/action-pipenv@v2.0.1
-        with:
-          command: run mypy swatch
+          command: python -m tox -e ${{ matrix.python-version }}
