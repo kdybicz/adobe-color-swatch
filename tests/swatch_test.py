@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
 from unittest import mock
@@ -13,6 +14,8 @@ from swatch.swatch import load_csv_file
 from swatch.swatch import map_to_hex_color
 from swatch.swatch import map_to_raw_color
 from swatch.swatch import RawColor
+from swatch.swatch import save_aco_file
+from swatch.swatch import save_csv_file
 from swatch.swatch import validate_color_space
 from swatch.swatch import ValidationError
 
@@ -497,3 +500,43 @@ def test_load_csv_file_succeed():
 def test_load_csv_file_does_not_fail_on_invalid_file(file):
     # expect
     assert not load_csv_file(file)
+
+
+def test_save_csv_file_succeed(tmpdir):
+    # given
+    colors_data = [
+        HexColor('Zażółć gęślą jaźń', ColorSpace.HSB, '#2A2AA8A8E3E3'),
+        HexColor('チェリー', ColorSpace.HSB, '#F2F2EAEAAFAF'),
+        HexColor('a', ColorSpace.HSB, '#F2F20000FFFF'),
+    ]
+    # and
+    file_path = tmpdir.join('out.csv')
+
+    # when
+    with open(file_path, 'wt', encoding='utf-8') as file:
+        save_csv_file(colors_data, file)
+    # then
+    with open(file_path, encoding='utf-8') as file:
+        assert file.readlines() == [
+            'name,space_id,color\n',
+            'Zażółć gęślą jaźń,1,#2A2AA8A8E3E3\n',
+            'チェリー,1,#F2F2EAEAAFAF\n',
+            'a,1,#F2F20000FFFF\n',
+        ]
+
+
+def test_save_aco_file_succeed(tmpdir):
+    # given
+    colors_data = [
+        RawColor('Zażółć gęślą jaźń', ColorSpace.HSB, 10794, 43176, 58339, 0),
+        RawColor('チェリー', ColorSpace.HSB, 62194, 60138, 44975, 0),
+        RawColor('a', ColorSpace.HSB, 62194, 0, 65535, 0),
+    ]
+    # and
+    file_path = tmpdir.join('out.aco')
+
+    # when
+    with open(file_path, 'wb') as file:
+        save_aco_file(colors_data, file)
+    # then
+    assert os.stat(file_path).st_size == 130

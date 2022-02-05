@@ -350,7 +350,7 @@ def load_aco_file(file: BinaryIO) -> list[HexColor]:
         log.debug('\nParsing version 2 section')
 
         version_byte = int.from_bytes(file.read(2), 'big')
-        if version_byte != 2:
+        if version_byte != 2:   # pragma: no cover
             raise ValidationError('Version byte should be 2')
 
         color_count = int.from_bytes(file.read(2), 'big')
