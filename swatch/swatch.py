@@ -303,7 +303,8 @@ def map_to_raw_color(
 
     raise ValidationError(f'unsupported color space: {str(color_space)}')
 
-def parse_aco(file: BinaryIO) -> list[HexColor]:
+
+def load_aco_file(file: BinaryIO) -> list[HexColor]:
     """Parses the `.aco` file and returns a list of lists, were each of them
     contains the name, color space id and a HEX string representation of the
     colors extracted from the Color Swatch file.
@@ -397,7 +398,7 @@ def parse_aco(file: BinaryIO) -> list[HexColor]:
     return colors
 
 
-def save_csv(colors_data: list[HexColor], file: TextIO) -> None:
+def save_csv_file(colors_data: list[HexColor], file: TextIO) -> None:
     """Saves provided color data into a `.csv` file.
 
     Args:
@@ -427,7 +428,7 @@ def save_csv(colors_data: list[HexColor], file: TextIO) -> None:
         file.close()
 
 
-def extract_aco(
+def convert_aco_file_to_csv(
     input_file: BinaryIO,
     output_file: TextIO,
 ) -> None:
@@ -439,12 +440,12 @@ def extract_aco(
     """
     log.info('\nExtracting "%s" to "%s"', input_file.name, output_file.name)
 
-    colors_data = parse_aco(input_file)
+    colors_data = load_aco_file(input_file)
 
-    save_csv(colors_data, output_file)
+    save_csv_file(colors_data, output_file)
 
 
-def parse_csv(file: TextIO) -> list[RawColor]:
+def load_csv_file(file: TextIO) -> list[RawColor]:
     """Parses the `.csv` file and returns a list `RawColor`s, were each of them
     contains the name, color space and four color components.
 
@@ -503,7 +504,7 @@ def parse_csv(file: TextIO) -> list[RawColor]:
     return colors
 
 
-def save_aco(colors_data: list[RawColor], file: BinaryIO) -> None:
+def save_aco_file(colors_data: list[RawColor], file: BinaryIO) -> None:
     """Saves provided color data into a `.aco` file.
 
     Args:
@@ -562,7 +563,7 @@ def save_aco(colors_data: list[RawColor], file: BinaryIO) -> None:
         file.close()
 
 
-def generate_aco(
+def convert_csv_file_to_aco(
     input_file: TextIO,
     output_file: BinaryIO,
 ) -> None:
@@ -574,6 +575,6 @@ def generate_aco(
     """
     log.info('\nGenerating "%s" to "%s"', input_file.name, output_file.name)
 
-    colors_data = parse_csv(input_file)
+    colors_data = load_csv_file(input_file)
 
-    save_aco(colors_data, output_file)
+    save_aco_file(colors_data, output_file)

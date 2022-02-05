@@ -16,7 +16,7 @@ if sys.version_info < (3, 8):   # pragma: no cover
 else:   # pragma: no cover
     import importlib.metadata as importlib_metadata
 
-from swatch.swatch import extract_aco, generate_aco
+from swatch.swatch import convert_aco_file_to_csv, convert_csv_file_to_aco
 
 ParsedArgs = Tuple[ArgumentParser, Namespace]
 
@@ -108,10 +108,10 @@ def main(argv: Sequence[str] | None = None) -> int:   # pragma: no cover
         logging.basicConfig(level=log_level, format='%(message)s', handlers=[])
 
         if args.sub_command == 'extract':
-            extract_aco(args.input, args.output)
+            convert_aco_file_to_csv(args.input, args.output)
 
         if args.sub_command == 'generate':
-            generate_aco(args.input, args.output)
+            convert_csv_file_to_aco(args.input, args.output)
 
         return 0
 

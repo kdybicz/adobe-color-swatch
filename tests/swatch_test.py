@@ -9,10 +9,10 @@ import pytest
 from swatch.swatch import __validate_color_space
 from swatch.swatch import ColorSpace
 from swatch.swatch import HexColor
+from swatch.swatch import load_aco_file
+from swatch.swatch import load_csv_file
 from swatch.swatch import map_to_hex_color
 from swatch.swatch import map_to_raw_color
-from swatch.swatch import parse_aco
-from swatch.swatch import parse_csv
 from swatch.swatch import RawColor
 from swatch.swatch import ValidationError
 
@@ -449,14 +449,14 @@ def test_map_to_raw_color_for_unsupported(color_space, expected):
         map_to_raw_color('color', color_space, '#000000')
 
 
-def test_parse_aco_succeed():
+def test_load_aco_file_succeed():
     # given
     base_path = Path(__file__).parent
     file_path = (base_path / '../examples/utf.aco').resolve()
 
     # when
     with open(file_path, 'rb') as file:
-        color_data = parse_aco(file)
+        color_data = load_aco_file(file)
     # then
     assert color_data == [
         HexColor('Zażółć gęślą jaźń', ColorSpace.HSB, '#2A2AA8A8E3E3'),
@@ -465,26 +465,26 @@ def test_parse_aco_succeed():
     ]
 
 
-def test_parse_aco_does_not_fail_on_invalid_file():
+def test_load_aco_file_does_not_fail_on_invalid_file():
     # given
     base_path = Path(__file__).parent
     file_path = (base_path / '../examples/utf.csv').resolve()
 
     # when
     with open(file_path, 'rb') as file:
-        color_data = parse_aco(file)
+        color_data = load_aco_file(file)
     # then
     assert not color_data
 
 
-def test_parse_csv_succeed():
+def test_load_csv_file_succeed():
     # given
     base_path = Path(__file__).parent
     file_path = (base_path / '../examples/utf.csv').resolve()
 
     # when
     with open(file_path, encoding='utf-8') as file:
-        color_data = parse_csv(file)
+        color_data = load_csv_file(file)
     # then
     assert color_data == [
         RawColor('Zażółć gęślą jaźń', ColorSpace.HSB, 10794, 43176, 58339, 0),
@@ -494,6 +494,6 @@ def test_parse_csv_succeed():
 
 
 @mock.patch('builtins.open', create=True)
-def test_parse_csv_does_not_fail_on_invalid_file(file):
+def test_load_csv_file_does_not_fail_on_invalid_file(file):
     # expect
-    assert not parse_csv(file)
+    assert not load_csv_file(file)
