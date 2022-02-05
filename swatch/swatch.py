@@ -8,9 +8,6 @@ import sys
 import traceback
 from enum import Enum
 from enum import unique
-from io import BufferedReader
-from io import BufferedWriter
-from io import TextIOWrapper
 from typing import BinaryIO
 from typing import NamedTuple
 from typing import TextIO
@@ -109,24 +106,24 @@ def raw_color_to_hex(
     """Combines provided color data in a HEX string representation
     of that color.
 
-    RGB
+    ColorSpace.RGB
         The first three components represent red, green and blue. Fourth should
         be 0. They are full unsigned 16-bit values as in Apple's RGBColor data
         structure.
         Pure red = 65535, 0, 0.
 
-    HSB
+    ColorSpace.HSB
         The first three components represent hue, saturation and brightness.
         They are full unsigned 16-bit values as in Apple's HSVColor data
         structure.
         Pure red = 0, 65535, 65535.
 
-    CMYK
+    ColorSpace.CMYK
         The four components represent cyan, magenta, yellow and black. They are
         full unsigned 16-bit values.
         0 = 100% ink. For example, pure cyan = 0, 65535, 65535, 65535.
 
-    Grayscale
+    ColorSpace.GRAYSCALE
         The first component represent the gray value, from 0...10000.
 
     Args:
@@ -186,22 +183,22 @@ def hex_color_to_raw(
     """Parses provided HEX string representation of a color
     into four element list of color components.
 
-    RGB
+    ColorSpace.RGB
         Supports both 8-bit and 16-bit per color channel, expects three
         channels only.
         Leading `#` is optional. Pure red = #FFFF00000000.
 
-    HSB
+    ColorSpace.HSB
         Supports both 8-bit and 16-bit per color channel, expects three
         channels only.
         Leading `#` is optional. Pure red = #00FFFF.
 
-    CMYK
+    ColorSpace.CMYK
         Supports both 8-bit and 16-bit per color channel, expects four
         channels.
         Leading `#` is optional. Pure cyan = 0000FFFFFFFFFFFF.
 
-    Grayscale
+    ColorSpace.GRAYSCALE
         Supports both 8-bit and 16-bit for grey value, expects only one
         channel.
         Leading `#` is optional. Pure black = #2710.
@@ -293,9 +290,9 @@ def parse_aco(file: BinaryIO) -> list[HexColor]:
         file: handle to the `.aco` file to be parsed.
 
     Returns:
-        A list of lists, were each of them contains the name, color space id
-        and a HEX string representation of the colors extracted from the Color
-        Swatch file.
+        A list of `HexColor`s, were each of them contains the name, color space
+        and a HEX string representation of the colors extracted from the
+        Color Swatch file.
 
     Raises:
         ValidationError: Is raised if parsed file contains unexpected data.
@@ -377,12 +374,12 @@ def parse_aco(file: BinaryIO) -> list[HexColor]:
     return colors
 
 
-def save_csv(colors_data: list[HexColor], file: TextIOWrapper) -> None:
+def save_csv(colors_data: list[HexColor], file: TextIO) -> None:
     """Saves provided color data into a `.csv` file.
 
     Args:
-        colors_data: list of lists, were each of them contains the name, color
-            space id and a HEX string representation of a color.
+        colors_data: list of `HexColor`s, were each of them contains the name,
+            color space and a HEX string representation of a color.
         file: handle to the `.csv` file to be saved.
     """
     try:
@@ -408,8 +405,8 @@ def save_csv(colors_data: list[HexColor], file: TextIOWrapper) -> None:
 
 
 def extract_aco(
-    input_file: BufferedReader,
-    output_file: TextIOWrapper,
+    input_file: BinaryIO,
+    output_file: TextIO,
 ) -> None:
     """Extracts data from `.aco` file and stores them in the `.csv` file.
 
@@ -425,14 +422,14 @@ def extract_aco(
 
 
 def parse_csv(file: TextIO) -> list[RawColor]:
-    """Parses the `.csv` file and returns a list of lists, were each of them
-    contains the name, color space id and four color components.
+    """Parses the `.csv` file and returns a list `RawColor`s, were each of them
+    contains the name, color space and four color components.
 
     Args:
         file: handle to the `.csv` file to be parsed.
 
     Returns:
-        A list of lists, were each of them contains the name, color space id
+        A list of `RawColor`s, were each of them contains the name, color space
         and four color components.
 
     Raises:
@@ -492,12 +489,12 @@ def parse_csv(file: TextIO) -> list[RawColor]:
     return colors
 
 
-def save_aco(colors_data: list[RawColor], file: BufferedWriter) -> None:
+def save_aco(colors_data: list[RawColor], file: BinaryIO) -> None:
     """Saves provided color data into a `.aco` file.
 
     Args:
-        colors_data: list of lists, were each of them contains the name, color
-            space id and four color components.
+        colors_data: list of `RawColor`s, were each of them contains the name,
+            color space and four color components.
         file: handle to the `.aco` file to be saved.
     """
     try:
@@ -552,8 +549,8 @@ def save_aco(colors_data: list[RawColor], file: BufferedWriter) -> None:
 
 
 def generate_aco(
-    input_file: TextIOWrapper,
-    output_file: BufferedWriter,
+    input_file: TextIO,
+    output_file: BinaryIO,
 ) -> None:
     """Generating `.aco` file based on the data from the `.csv` file.
 
