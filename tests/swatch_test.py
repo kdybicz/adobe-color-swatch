@@ -8,6 +8,8 @@ from unittest import mock
 import pytest
 
 from swatch.swatch import ColorSpace
+from swatch.swatch import convert_aco_file_to_csv
+from swatch.swatch import convert_csv_file_to_aco
 from swatch.swatch import HexColor
 from swatch.swatch import load_aco_file
 from swatch.swatch import load_csv_file
@@ -540,3 +542,37 @@ def test_save_aco_file_succeed(tmpdir):
         save_aco_file(colors_data, file)
     # then
     assert os.stat(file_path).st_size == 130
+
+
+def test_convert_csv_file_to_aco_succeed(tmpdir):
+    # given
+    base_path = Path(__file__).parent
+    csv_file_path = (base_path / '../examples/utf.csv').resolve()
+    # and
+    aco_file_path = tmpdir.join('utf.aco')
+
+    # when
+    with open(csv_file_path, encoding='utf-8') as csv_file, open(aco_file_path, 'wb') as aco_file:
+        convert_csv_file_to_aco(csv_file, aco_file)
+    # then
+    assert os.stat(aco_file_path).st_size == 130
+
+
+def test_convert_aco_file_to_csv_succeed(tmpdir):
+    # given
+    base_path = Path(__file__).parent
+    aco_file_path = (base_path / '../examples/utf.aco').resolve()
+    # and
+    csv_file_path = tmpdir.join('utf.csv')
+
+    # when
+    with open(csv_file_path, 'wt', encoding='utf-8') as csv_file, open(aco_file_path, 'rb') as aco_file:
+        convert_aco_file_to_csv(aco_file, csv_file)
+    # then
+    with open(csv_file_path, encoding='utf-8') as file:
+        assert file.readlines() == [
+            'name,space_id,color\n',
+            'Zażółć gęślą jaźń,1,#2A2AA8A8E3E3\n',
+            'チェリー,1,#F2F2EAEAAFAF\n',
+            'a,1,#F2F20000FFFF\n',
+        ]

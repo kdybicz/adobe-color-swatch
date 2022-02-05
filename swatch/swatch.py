@@ -420,7 +420,7 @@ def save_csv_file(colors_data: list[HexColor], file: TextIO) -> None:
             file.write(color_data.color_hex)
             file.write('\n')
 
-    except OSError:
+    except OSError:   # pragma: no cover
         log.error('\nError while saving .csv file')
         log.error(traceback.format_exc())
 
@@ -475,11 +475,11 @@ def load_csv_file(file: TextIO) -> list[RawColor]:
 
         for color_line in color_lines:
             line_elements = color_line.split(',')
-            if len(line_elements) != 3:
+            if len(line_elements) != 3:   # pragma: no cover
                 raise ValidationError('Color line should contain 3 elements')
 
             name = line_elements[0]
-            if len(name.strip()) == 0:
+            if len(name.strip()) == 0:   # pragma: no cover
                 raise ValidationError('Color name must be provided')
 
             color_space_id = int(line_elements[1])
@@ -555,7 +555,7 @@ def save_aco_file(colors_data: list[RawColor], file: BinaryIO) -> None:
             termination_char = 0
             file.write(termination_char.to_bytes(2, 'big'))
 
-    except OSError:
+    except OSError:   # pragma: no cover
         log.error('\nError while saving .aco file')
         log.error(traceback.format_exc())
 
