@@ -1,4 +1,3 @@
-# pylint: disable=missing-function-docstring,missing-module-docstring,too-many-arguments
 from __future__ import annotations
 
 from contextlib import nullcontext as does_not_raise
@@ -7,11 +6,13 @@ from unittest import mock
 
 import pytest
 
-from swatch.swatch import ColorSpace, HexColor, RawColor
+from swatch.swatch import ColorSpace
 from swatch.swatch import hex_color_to_raw
+from swatch.swatch import HexColor
 from swatch.swatch import parse_aco
 from swatch.swatch import parse_csv
 from swatch.swatch import raw_color_to_hex
+from swatch.swatch import RawColor
 from swatch.swatch import validate_color_space
 from swatch.swatch import ValidationError
 

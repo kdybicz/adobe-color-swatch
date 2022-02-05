@@ -11,7 +11,9 @@ from enum import unique
 from io import BufferedReader
 from io import BufferedWriter
 from io import TextIOWrapper
+from typing import BinaryIO
 from typing import NamedTuple
+from typing import TextIO
 
 log = logging.getLogger('__name__')
 
@@ -282,7 +284,7 @@ def hex_color_to_raw(
     raise ValidationError(f'unsupported color space: {str(color_space)}')
 
 
-def parse_aco(file: BufferedReader) -> list[HexColor]:
+def parse_aco(file: BinaryIO) -> list[HexColor]:
     """Parses the `.aco` file and returns a list of lists, were each of them
     contains the name, color space id and a HEX string representation of the
     colors extracted from the Color Swatch file.
@@ -422,7 +424,7 @@ def extract_aco(
     save_csv(colors_data, output_file)
 
 
-def parse_csv(file: TextIOWrapper) -> list[RawColor]:
+def parse_csv(file: TextIO) -> list[RawColor]:
     """Parses the `.csv` file and returns a list of lists, were each of them
     contains the name, color space id and four color components.
 
