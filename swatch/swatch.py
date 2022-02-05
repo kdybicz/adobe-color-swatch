@@ -81,7 +81,7 @@ class ValidationError(Exception):
         return repr(self.message)
 
 
-def __validate_color_space(color_space: ColorSpace) -> None:
+def validate_color_space(color_space: ColorSpace) -> None:
     """Validate provided `color_space`.
 
     Args:
@@ -335,7 +335,7 @@ def load_aco_file(file: BinaryIO) -> list[HexColor]:
 
         for idx in range(color_count):
             color_space = ColorSpace(int.from_bytes(file.read(2), 'big'))
-            __validate_color_space(color_space)
+            validate_color_space(color_space)
 
             component_1 = int.from_bytes(file.read(2), 'big')
             component_2 = int.from_bytes(file.read(2), 'big')
@@ -358,7 +358,7 @@ def load_aco_file(file: BinaryIO) -> list[HexColor]:
 
         for idx in range(color_count):
             color_space = ColorSpace(int.from_bytes(file.read(2), 'big'))
-            __validate_color_space(color_space)
+            validate_color_space(color_space)
 
             component_1 = int.from_bytes(file.read(2), 'big')
             component_2 = int.from_bytes(file.read(2), 'big')

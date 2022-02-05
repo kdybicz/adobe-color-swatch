@@ -6,7 +6,6 @@ from unittest import mock
 
 import pytest
 
-from swatch.swatch import __validate_color_space
 from swatch.swatch import ColorSpace
 from swatch.swatch import HexColor
 from swatch.swatch import load_aco_file
@@ -14,6 +13,7 @@ from swatch.swatch import load_csv_file
 from swatch.swatch import map_to_hex_color
 from swatch.swatch import map_to_raw_color
 from swatch.swatch import RawColor
+from swatch.swatch import validate_color_space
 from swatch.swatch import ValidationError
 
 
@@ -59,7 +59,7 @@ from swatch.swatch import ValidationError
 def test_validate_color_space(color_space, expected):
     # expect
     with expected:
-        __validate_color_space(color_space)
+        validate_color_space(color_space)
 
 
 @pytest.mark.parametrize(
