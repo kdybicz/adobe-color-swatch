@@ -81,7 +81,7 @@ class ValidationError(Exception):
         return repr(self.message)
 
 
-def validate_color_space(color_space: ColorSpace) -> None:
+def __validate_color_space(color_space: ColorSpace) -> None:
     """Validate provided `color_space`.
 
     Args:
@@ -94,7 +94,7 @@ def validate_color_space(color_space: ColorSpace) -> None:
         raise ValidationError(f'unsupported color space: {str(color_space)}')
 
 
-def raw_color_to_hex(
+def __raw_color_to_hex(
     color_space: ColorSpace,
     component_1: int,
     component_2: int,
@@ -174,7 +174,7 @@ def raw_color_to_hex(
     raise ValidationError(f'unsupported color space: {str(color_space)}')
 
 
-def hex_color_to_raw(
+def __hex_color_to_raw(
     color_space: ColorSpace,
     color_hex: str = '',
 ) -> list[int]:
@@ -310,7 +310,7 @@ def parse_aco(file: BinaryIO) -> list[HexColor]:
 
         for idx in range(color_count):
             color_space = ColorSpace(int.from_bytes(file.read(2), 'big'))
-            validate_color_space(color_space)
+            __validate_color_space(color_space)
 
             component_1 = int.from_bytes(file.read(2), 'big')
             component_2 = int.from_bytes(file.read(2), 'big')
@@ -333,7 +333,7 @@ def parse_aco(file: BinaryIO) -> list[HexColor]:
 
         for idx in range(color_count):
             color_space = ColorSpace(int.from_bytes(file.read(2), 'big'))
-            validate_color_space(color_space)
+            __validate_color_space(color_space)
 
             component_1 = int.from_bytes(file.read(2), 'big')
             component_2 = int.from_bytes(file.read(2), 'big')
@@ -348,7 +348,7 @@ def parse_aco(file: BinaryIO) -> list[HexColor]:
             # droping the string termination character
             file.read(2)
 
-            color_hex = raw_color_to_hex(
+            color_hex = __raw_color_to_hex(
                 color_space,
                 component_1,
                 component_2,
@@ -465,7 +465,7 @@ def parse_csv(file: TextIO) -> list[RawColor]:
             log.debug('   Color space: %s', color_space)
             log.debug('   Color: %s', color_hex)
 
-            color_components = hex_color_to_raw(color_space, color_hex)
+            color_components = __hex_color_to_raw(color_space, color_hex)
 
             colors.append(
                 RawColor(
