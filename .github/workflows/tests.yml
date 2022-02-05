@@ -36,7 +36,7 @@ jobs:
           export PY38_PATH=$CONDA/envs/py38/bin
           export PY310_PATH=$CONDA/envs/py310/bin
           export PATH=$PATH:$PY37_PATH:$PY38_PATH:$PY310_PATH
-          tox --parallel
+          tox
 
       # - name: Setup Python ${{ matrix.python-version }}
       #   uses: actions/setup-python@v2
