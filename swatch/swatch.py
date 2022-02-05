@@ -26,9 +26,7 @@ log.addHandler(error_handler)
 
 @unique
 class ColorSpace(Enum):
-    """
-    Adobe Color Swatch - Color Space Ids.
-    """
+    """Adobe Color Swatch - Color Space Ids."""
     RGB = (0, 'RGB', True)
     HSB = (1, 'HSB', True)
     CMYK = (2, 'CMYK', True)
