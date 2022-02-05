@@ -31,7 +31,7 @@ def parse_args(args: Sequence[str] | None = None) -> ParsedArgs:
     parser.add_argument(
         '-V', '--version',
         action='version',
-        version=f'%(prog)s {importlib_metadata.version("adobe-color-swatch")}',
+        version=f'%(prog)s {importlib_metadata.version("adobe_color_swatch")}',
     )
     subparsers = parser.add_subparsers(dest='sub_command')
 
