@@ -8,11 +8,11 @@ import pytest
 
 from swatch.swatch import __validate_color_space
 from swatch.swatch import ColorSpace
-from swatch.swatch import __hex_color_to_raw
 from swatch.swatch import HexColor
+from swatch.swatch import map_to_hex_color
+from swatch.swatch import map_to_raw_color
 from swatch.swatch import parse_aco
 from swatch.swatch import parse_csv
-from swatch.swatch import __raw_color_to_hex
 from swatch.swatch import RawColor
 from swatch.swatch import ValidationError
 
@@ -101,10 +101,10 @@ def test_validate_color_space(color_space, expected):
         ),
     ],
 )
-def test_raw_color_to_hex_with_validation(color_space, expected):
+def test_map_to_hex_color_with_validation(color_space, expected):
     # expect
     with expected:
-        __raw_color_to_hex(color_space, 10000, 0, 0, 0)
+        map_to_hex_color('color', color_space, 10000)
 
 
 @pytest.mark.parametrize(
@@ -119,13 +119,18 @@ def test_raw_color_to_hex_with_validation(color_space, expected):
         (0, 0, 0, 1),
     ],
 )
-def test_raw_color_to_hex_for_rgb_invalid_values(
+def test_map_to_hex_color_for_rgb_invalid_values(
     component_1, component_2, component_3, component_4,
 ):
     # expect
     with pytest.raises(ValidationError, match=r'invalid RGB value:'):
-        __raw_color_to_hex(
-            ColorSpace.RGB, component_1, component_2, component_3, component_4,
+        map_to_hex_color(
+            'color',
+            ColorSpace.RGB,
+            component_1,
+            component_2,
+            component_3,
+            component_4,
         )
 
 
@@ -141,13 +146,18 @@ def test_raw_color_to_hex_for_rgb_invalid_values(
         (0, 0, 0, 1),
     ],
 )
-def test_raw_color_to_hex_for_hsb_invalid_values(
+def test_map_to_hex_color_for_hsb_invalid_values(
     component_1, component_2, component_3, component_4,
 ):
     # expect
     with pytest.raises(ValidationError, match=r'invalid HSB value:'):
-        __raw_color_to_hex(
-            ColorSpace.HSB, component_1, component_2, component_3, component_4,
+        map_to_hex_color(
+            'color',
+            ColorSpace.HSB,
+            component_1,
+            component_2,
+            component_3,
+            component_4,
         )
 
 
@@ -164,13 +174,18 @@ def test_raw_color_to_hex_for_hsb_invalid_values(
         (0, 0, 0, 65536),
     ],
 )
-def test_raw_color_to_hex_for_cmyk_invalid_values(
+def test_map_to_hex_color_for_cmyk_invalid_values(
     component_1, component_2, component_3, component_4,
 ):
     # expect
     with pytest.raises(ValidationError, match=r'invalid CMYK value:'):
-        __raw_color_to_hex(
-            ColorSpace.CMYK, component_1, component_2, component_3, component_4,
+        map_to_hex_color(
+            'color',
+            ColorSpace.CMYK,
+            component_1,
+            component_2,
+            component_3,
+            component_4,
         )
 
 
@@ -182,13 +197,18 @@ def test_raw_color_to_hex_for_cmyk_invalid_values(
         (65536, 0, 0, 0),
     ],
 )
-def test_raw_color_to_hex_for_grayscale_invalid_values(
+def test_map_to_hex_color_for_grayscale_invalid_values(
     component_1, component_2, component_3, component_4,
 ):
     # expect
     with pytest.raises(ValidationError, match=r'invalid Grayscale value:'):
-        __raw_color_to_hex(
-            ColorSpace.GRAYSCALE, component_1, component_2, component_3, component_4,
+        map_to_hex_color(
+            'color',
+            ColorSpace.GRAYSCALE,
+            component_1,
+            component_2,
+            component_3,
+            component_4,
         )
 
 
@@ -201,13 +221,18 @@ def test_raw_color_to_hex_for_grayscale_invalid_values(
         (ColorSpace.GRAYSCALE, 10000, 0, 0, 0, '#2710'),
     ],
 )
-def test_raw_color_to_hex_for_supported_color_space(
+def test_map_to_hex_color_for_supported_color_space(
     color_space, component_1, component_2, component_3, component_4, expected,
 ):
     # expect
-    assert __raw_color_to_hex(
-        color_space, component_1, component_2, component_3, component_4,
-    ) == expected
+    assert map_to_hex_color(
+        'color',
+        color_space,
+        component_1,
+        component_2,
+        component_3,
+        component_4,
+    ) == HexColor('color', color_space, expected)
 
 
 @pytest.mark.parametrize(
@@ -246,10 +271,10 @@ def test_raw_color_to_hex_for_supported_color_space(
         ),
     ],
 )
-def test_hex_color_to_raw_for_rgb(color_hex, exception, expected):
+def test_map_to_raw_color_for_rgb(color_hex, exception, expected):
     # expect
     with exception:
-        assert __hex_color_to_raw(ColorSpace.RGB, color_hex) == expected
+        assert map_to_raw_color('color', ColorSpace.RGB, color_hex) == RawColor('color', ColorSpace.RGB, *expected)
 
 
 @pytest.mark.parametrize(
@@ -288,10 +313,10 @@ def test_hex_color_to_raw_for_rgb(color_hex, exception, expected):
         ),
     ],
 )
-def test_hex_color_to_raw_for_hsb(color_hex, exception, expected):
+def test_map_to_raw_color_for_hsb(color_hex, exception, expected):
     # expect
     with exception:
-        assert __hex_color_to_raw(ColorSpace.HSB, color_hex) == expected
+        assert map_to_raw_color('color', ColorSpace.HSB, color_hex) == RawColor('color', ColorSpace.HSB, *expected)
 
 
 @pytest.mark.parametrize(
@@ -330,10 +355,10 @@ def test_hex_color_to_raw_for_hsb(color_hex, exception, expected):
         ),
     ],
 )
-def test_hex_color_to_raw_for_cmyk(color_hex, exception, expected):
+def test_map_to_raw_color_for_cmyk(color_hex, exception, expected):
     # expect
     with exception:
-        assert __hex_color_to_raw(ColorSpace.CMYK, color_hex) == expected
+        assert map_to_raw_color('color', ColorSpace.CMYK, color_hex) == RawColor('color', ColorSpace.CMYK, *expected)
 
 
 @pytest.mark.parametrize(
@@ -377,10 +402,10 @@ def test_hex_color_to_raw_for_cmyk(color_hex, exception, expected):
         ),
     ],
 )
-def test_hex_color_to_raw_for_grayscale(color_hex, exception, expected):
+def test_map_to_raw_color_for_grayscale(color_hex, exception, expected):
     # expect
     with exception:
-        assert __hex_color_to_raw(ColorSpace.GRAYSCALE, color_hex) == expected
+        assert map_to_raw_color('color', ColorSpace.GRAYSCALE, color_hex) == RawColor('color', ColorSpace.GRAYSCALE, *expected)
 
 
 @pytest.mark.parametrize(
@@ -418,10 +443,10 @@ def test_hex_color_to_raw_for_grayscale(color_hex, exception, expected):
         ),
     ],
 )
-def test_hex_color_to_raw_for_unsupported(color_space, expected):
+def test_map_to_raw_color_for_unsupported(color_space, expected):
     # expect
     with expected:
-        __hex_color_to_raw(color_space, '#000000')
+        map_to_raw_color('color', color_space, '#000000')
 
 
 def test_parse_aco_succeed():

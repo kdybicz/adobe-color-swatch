@@ -64,10 +64,10 @@ class HexColor(NamedTuple):
 class RawColor(NamedTuple):
     name: str
     color_space: ColorSpace
-    component_1: int
-    component_2: int
-    component_3: int
-    component_4: int
+    component_1: int = 0
+    component_2: int = 0
+    component_3: int = 0
+    component_4: int = 0
 
 
 class ValidationError(Exception):
@@ -94,14 +94,15 @@ def __validate_color_space(color_space: ColorSpace) -> None:
         raise ValidationError(f'unsupported color space: {str(color_space)}')
 
 
-def __raw_color_to_hex(
+def map_to_hex_color(
+    name: str,
     color_space: ColorSpace,
-    component_1: int,
-    component_2: int,
-    component_3: int,
-    component_4: int,
-) -> str:
-    """Combines provided color data in a HEX string representation
+    component_1: int = 0,
+    component_2: int = 0,
+    component_3: int = 0,
+    component_4: int = 0,
+) -> HexColor:
+    """Combines provided color data into a `HexColor` representation
     of that color.
 
     ColorSpace.RGB
@@ -125,6 +126,7 @@ def __raw_color_to_hex(
         The first component represent the gray value, from 0...10000.
 
     Args:
+        name: name of the color
         color_space: color space if to be checked.
         component_1: first channel of the color for specified color space.
         component_2: second channel of the color for specified color space.
@@ -132,7 +134,7 @@ def __raw_color_to_hex(
         component_4: fourth channel of the color for specified color space.
 
     Returns:
-        A HEX string representation of the color.
+        A `HexColor` representation of the color.
 
     Raises:
         ValidationError: Is raised if color components exceed expected values
@@ -145,7 +147,11 @@ def __raw_color_to_hex(
                 f'invalid RGB value: {component_1}, {component_2}, {component_3}, {component_4}',  # noqa: E501
             )
 
-        return f'#{component_1:04X}{component_2:04X}{component_3:04X}'
+        return HexColor(
+            name,
+            color_space,
+            f'#{component_1:04X}{component_2:04X}{component_3:04X}',
+        )
     if color_space is ColorSpace.HSB:
         if not 0 <= component_1 <= 65535 or not 0 <= component_2 <= 65535 or \
                 not 0 <= component_3 <= 65535 or component_4 != 0:
@@ -153,7 +159,11 @@ def __raw_color_to_hex(
                 f'invalid HSB value: {component_1}, {component_2}, {component_3}, {component_4}',  # noqa: E501
             )
 
-        return f'#{component_1:04X}{component_2:04X}{component_3:04X}'
+        return HexColor(
+            name,
+            color_space,
+            f'#{component_1:04X}{component_2:04X}{component_3:04X}',
+        )
     if color_space is ColorSpace.CMYK:
         if not 0 <= component_1 <= 65535 or not 0 <= component_2 <= 65535 or \
                 not 0 <= component_3 <= 65535 or not 0 <= component_4 <= 65535:
@@ -161,7 +171,11 @@ def __raw_color_to_hex(
                 f'invalid CMYK value: {component_1}, {component_2}, {component_3}, {component_4}',  # noqa: E501
             )
 
-        return f'#{component_1:04X}{component_2:04X}{component_3:04X}{component_4:04X}'  # noqa: E501
+        return HexColor(
+            name,
+            color_space,
+            f'#{component_1:04X}{component_2:04X}{component_3:04X}{component_4:04X}',  # noqa: E501
+        )
     if color_space is ColorSpace.GRAYSCALE:
         if not 0 <= component_1 <= 10000 or component_2 != 0 or \
                 component_3 != 0 or component_4 != 0:
@@ -169,15 +183,20 @@ def __raw_color_to_hex(
                 f'invalid Grayscale value: {component_1}, {component_2}, {component_3}, {component_4}',  # noqa: E501
             )
 
-        return f'#{component_1:04X}'
+        return HexColor(
+            name,
+            color_space,
+            f'#{component_1:04X}',
+        )
 
     raise ValidationError(f'unsupported color space: {str(color_space)}')
 
 
-def __hex_color_to_raw(
+def map_to_raw_color(
+    name: str,
     color_space: ColorSpace,
     color_hex: str = '',
-) -> list[int]:
+) -> RawColor:
     """Parses provided HEX string representation of a color
     into four element list of color components.
 
@@ -202,11 +221,12 @@ def __hex_color_to_raw(
         Leading `#` is optional. Pure black = #2710.
 
     Args:
+        name: name of the color
         color_space: color space if to be checked.
         color_hex: HEX string representation of a color.
 
     Returns:
-        A four element list of color components.
+        A `RawColor` representation of a color.
 
     Raises:
         ValidationError: Is raised if color components exceed expected values
@@ -220,40 +240,46 @@ def __hex_color_to_raw(
     if color_space in [ColorSpace.RGB, ColorSpace.HSB]:
         if len(color_hex) == 6:
             # * 257 to convert to 32-bit color space
-            return [
+            return RawColor(
+                name,
+                color_space,
                 int(color_hex[0:2], base=16) * 257,
                 int(color_hex[2:4], base=16) * 257,
                 int(color_hex[4:6], base=16) * 257,
-                0,
-            ]
+            )
 
         if len(color_hex) == 12:
-            return [
+            return RawColor(
+                name,
+                color_space,
                 int(color_hex[0:4], base=16),
                 int(color_hex[4:8], base=16),
                 int(color_hex[8:12], base=16),
-                0,
-            ]
+            )
 
         raise ValidationError(f'unsupported color format: {color_hex}')
 
     if color_space is ColorSpace.CMYK:
         if len(color_hex) == 8:
             # * 257 to convert to 32-bit color space
-            return [
+            return RawColor(
+                name,
+                color_space,
                 int(color_hex[0:2], base=16) * 257,
                 int(color_hex[2:4], base=16) * 257,
                 int(color_hex[4:6], base=16) * 257,
                 int(color_hex[6:8], base=16) * 257,
-            ]
+            )
 
         if len(color_hex) == 16:
-            return [
+            return RawColor(
+                name,
+                color_space,
                 int(color_hex[0:4], base=16),
                 int(color_hex[4:8], base=16),
                 int(color_hex[8:12], base=16),
                 int(color_hex[12:16], base=16),
-            ]
+            )
 
         raise ValidationError(f'unsupported color format: {color_hex}')
 
@@ -269,15 +295,13 @@ def __hex_color_to_raw(
         if gray > 10000:
             raise ValidationError(f'invalid grayscale value: {color_hex}')
 
-        return [
+        return RawColor(
+            name,
+            color_space,
             gray,
-            0,
-            0,
-            0,
-        ]
+        )
 
     raise ValidationError(f'unsupported color space: {str(color_space)}')
-
 
 def parse_aco(file: BinaryIO) -> list[HexColor]:
     """Parses the `.aco` file and returns a list of lists, were each of them
@@ -348,7 +372,8 @@ def parse_aco(file: BinaryIO) -> list[HexColor]:
             # droping the string termination character
             file.read(2)
 
-            color_hex = __raw_color_to_hex(
+            hex_color = map_to_hex_color(
+                name,
                 color_space,
                 component_1,
                 component_2,
@@ -357,11 +382,11 @@ def parse_aco(file: BinaryIO) -> list[HexColor]:
             )
 
             log.debug(' - ID: %d', idx)
-            log.debug('   Color name: %s', name)
-            log.debug('   Color space: %s', color_space)
-            log.debug('   Color: %s', color_hex)
+            log.debug('   Color name: %s', hex_color.name)
+            log.debug('   Color space: %s', hex_color.color_space)
+            log.debug('   Color: %s', hex_color.color_hex)
 
-            colors.append(HexColor(name, color_space, color_hex))
+            colors.append(hex_color)
 
     except ValidationError as err:
         log.error('\nError while parsing .aco file: %s', err.message)
@@ -465,18 +490,9 @@ def parse_csv(file: TextIO) -> list[RawColor]:
             log.debug('   Color space: %s', color_space)
             log.debug('   Color: %s', color_hex)
 
-            color_components = __hex_color_to_raw(color_space, color_hex)
+            raw_color = map_to_raw_color(name, color_space, color_hex)
 
-            colors.append(
-                RawColor(
-                    name,
-                    color_space,
-                    color_components[0],
-                    color_components[1],
-                    color_components[2],
-                    color_components[3],
-                ),
-            )
+            colors.append(raw_color)
 
     except ValidationError as err:
         log.info('\nError while parsing .csv file: %s', err.message)
