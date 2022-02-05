@@ -99,7 +99,7 @@ NOT supported color spaces
 To validate that the `.aco` file generation is working properly I decided on
 the following process:
 * export few default Color Swatches from Adobe Photoshop 2022
-* extract them to `.csv` files and make sure data in that files are matching 
+* extract them to `.csv` files and make sure data in that files are matching
   to what is in the Adobe Photoshop
 * generate new `.aco` files from `.csv` acquired in the previous step
 * compare original `.aco` files with ones regenerated from `.csv` using:
