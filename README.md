@@ -5,7 +5,7 @@
 
 ## Description
 
-`swatch.py` is a Python 3 command line interface created to extract Color
+`swatch` is a Python 3 command line interface created to extract Color
 Swatch data from `.aco` files and save them as a simple `.csv`. It can also
 work in revers and generate a `.aco` file based on a `.csv` data file.
 
