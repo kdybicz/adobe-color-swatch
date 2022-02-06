@@ -5,11 +5,13 @@
 
 ## Description
 
-`swatch.py` is a Python 3 command line interface created to extract Color Swatch data from `.aco` files and output them into a simple `.csv`.
-It can also work in revers, so generate an `.aco` file based on data from a `.csv` file.
+`swatch.py` is a Python 3 command line interface created to extract Color
+Swatch data from `.aco` files and save them as a simple `.csv`. It can also
+work in revers and generate a `.aco` file based on a `.csv` data file.
 
 ## Installation
 
+Install from GitHub repository:
 ```
 pip3 install git+https://github.com/kdybicz/adobe-color-swatch
 ```
@@ -19,7 +21,7 @@ pip3 install git+https://github.com/kdybicz/adobe-color-swatch
 ### Extract `.aco`
 
 ```
-usage: swatch.py extract [-h] -i INPUT -o OUTPUT [-v]
+usage: swatch extract [-h] -i INPUT -o OUTPUT [-v]
 
 Extract .aco input file to a .csv output file
 
@@ -35,7 +37,7 @@ optional arguments:
 ### Generate `.aco`
 
 ```
-usage: swatch.py generate [-h] -i INPUT -o OUTPUT [-v]
+usage: swatch generate [-h] -i INPUT -o OUTPUT [-v]
 
 generate .aco output file based on .csv input file
 
@@ -52,9 +54,9 @@ optional arguments:
 
 `.aco` file format parser and generator were created based on
 [Adobe Color Swatch File Format Specification](https://www.adobe.com/devnet-apps/photoshop/fileformatashtml/#50577411_pgfId-1055819).
-Script is supporting read and write for Version 1 and 2 of the Color Swatch format.
+Script is supporting both version 1 and 2 of the Color Swatch format.
 
-`.csv` file is using simple, arbitrary format:
+`.csv` file is using custom format:
 
 ```
 name,space_id,color
@@ -87,11 +89,13 @@ NOT supported color spaces
 | 7  | Lab                      |
 | 10 | HKS colors               |
 
-## Debugging
+## Validation
 
-To validate that the `.aco` file generation is working properly I decided on the following flow:
+To validate that the `.aco` file generation is working properly I decided on
+the following process:
 * export few default Color Swatches from Adobe Photoshop 2022
-* extract them to `.csv` files and make sure data in that files are matching to what I can see in Adobe Photoshop
+* extract them to `.csv` files and make sure data in that files are matching
+  to what is in the Adobe Photoshop
 * generate new `.aco` files from `.csv` acquired in the previous step
 * compare original `.aco` files with ones regenerated from `.csv` using:
 ```
@@ -99,10 +103,63 @@ hexdump examples/utf.aco > utf.aco.hex
 hexdump utf-new.aco > utf-new.aco.hex
 diff utf.aco.hex utf-new.aco.hex -y
 ```
-* import new `.aco` files into Adobe Photoshop and compare with original Swatches
+* import new `.aco` files into Adobe Photoshop and compare them with original
+  Swatches
 
 ### Notes
 
-I'm aware that in the original `.aco` files there are some additional bytes at the end of the files, bytes which will not be present in the generate version. These bytes might be related to [Custom color spaces](https://www.adobe.com/devnet-apps/photoshop/fileformatashtml/#50577411_28552), but those are not supported by my script.
+I'm aware that original `.aco` files contain some additional bytes at the end
+of the files. Those bytes which will not be present in `.aco` files generated
+by the script. These bytes might be related to
+[Custom color spaces](https://www.adobe.com/devnet-apps/photoshop/fileformatashtml/#50577411_28552),
+which are not supported by this script.
 
-Nevertheless I was able to successfully import generated `.aco` files back into the Adobe Photoshop and use them in my work!
+Nevertheless I was able to successfully import generated `.aco` files back into
+the Adobe Photoshop and use them in my work!
+
+## Development
+
+### Testing and linting
+
+For all supported environments:
+```
+tox --parallel
+```
+**Note**: running tests for all supported Python versions require to have
+Python interpreters  for those versions to be installed.
+
+For particular environment:
+```
+tox -e py39
+```
+
+For running tests in development environment:
+```
+tox --devenv venv -e py39
+. venv/bin/activate
+pytest
+```
+
+### Local installation
+
+Install a project in editable mode:
+```
+ pip3 install -e .
+```
+
+## Deployment
+
+Building the packages:
+```
+./venv/bin/python setup.py sdist bdist_wheel
+```
+
+Checking if build packages are valid:
+```
+twine check dist/*
+```
+
+Uploading to pypi:
+```
+twine upload -r pypi dist/*
+```

@@ -1,0 +1,26 @@
+{
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "cSpell.words": [
+    "autopep",
+    "bdist",
+    "capsys",
+    "CMYK",
+    "colorfinder",
+    "devenv",
+    "Focoltone",
+    "Grayscale",
+    "hexdump",
+    "mypy",
+    "Pantone",
+    "Photoshop",
+    "pypi",
+    "pytest",
+    "pyupgrade",
+    "sdist",
+    "Toyo",
+    "Trumatch",
+    "venv"
+  ],
+  "editor.rulers": [79]
+}
