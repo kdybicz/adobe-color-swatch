@@ -11,11 +11,6 @@ work in revers and generate a `.aco` file based on a `.csv` data file.
 
 ## Installation
 
-Install from pypi:
-```
-pip3 install adobe_color_swatch
-```
-
 Install from GitHub repository:
 ```
 pip3 install git+https://github.com/kdybicz/adobe-color-swatch
@@ -159,7 +154,12 @@ Building the packages:
 ./venv/bin/python setup.py sdist bdist_wheel
 ```
 
+Checking if build packages are valid:
+```
+twine check dist/*
+```
+
 Uploading to pypi:
 ```
-twine upload -r pypi dist/adobe_color_swatch-*
+twine upload -r pypi dist/*
 ```
