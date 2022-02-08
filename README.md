@@ -114,7 +114,7 @@ by the script. These bytes might be related to
 [Custom color spaces](https://www.adobe.com/devnet-apps/photoshop/fileformatashtml/#50577411_28552),
 which are not supported by this script.
 
-Nevertheless I was able to successfully import generated `.aco` files back into
+Nevertheless, I was able to successfully import generated `.aco` files back into
 the Adobe Photoshop and use them in my work!
 
 ## Development

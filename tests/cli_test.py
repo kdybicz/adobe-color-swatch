@@ -40,7 +40,7 @@ def test_help_for_extract_with_no_args(capsys):
         parse_args(['extract'])
     # then
     captured = capsys.readouterr().err
-    assert re.search(r'usage: swatch extract \[-h\] -i INPUT -o OUTPUT \[-v\]', captured)
+    assert re.search(r'usage: swatch extract \[-h] -i INPUT -o OUTPUT \[-v]', captured)
     assert re.search(r'swatch extract: error: the following arguments are required: -i/--input, -o/--output', captured)
 
 
@@ -51,37 +51,37 @@ def test_help_for_extract_with_h(capsys):
     # then
     captured = capsys.readouterr().out
     assert re.search(r'Extract \.aco input file to a \.csv output file', captured)
-    assert re.search(r'usage: swatch extract \[-h\] -i INPUT -o OUTPUT \[-v\]', captured)
+    assert re.search(r'usage: swatch extract \[-h] -i INPUT -o OUTPUT \[-v]', captured)
 
 
 def test_extract_success_with_verbose(tmpdir):
     # given
-    input = tmpdir.join('in.aco')
-    input.write_binary(b'Binary file contents')
-    output = tmpdir.join('out.csv')
+    input_file = tmpdir.join('in.aco')
+    input_file.write_binary(b'Binary file contents')
+    output_file = tmpdir.join('out.csv')
 
     # when
-    _, arguments = parse_args(['extract', '-i', input.strpath, '-o', output.strpath, '-v'])
+    _, arguments = parse_args(['extract', '-i', input_file.strpath, '-o', output_file.strpath, '-v'])
     # then
     assert arguments.sub_command == 'extract'
     assert arguments.verbose
-    assert arguments.input.name == input.strpath
-    assert arguments.output.name == output.strpath
+    assert arguments.input.name == input_file.strpath
+    assert arguments.output.name == output_file.strpath
 
 
 def test_extract_success_without_verbose(tmpdir):
     # given
-    input = tmpdir.join('in.aco')
-    input.write_binary(b'Binary file contents')
-    output = tmpdir.join('out.csv')
+    input_file = tmpdir.join('in.aco')
+    input_file.write_binary(b'Binary file contents')
+    output_file = tmpdir.join('out.csv')
 
     # when
-    _, arguments = parse_args(['extract', '-i', input.strpath, '-o', output.strpath])
+    _, arguments = parse_args(['extract', '-i', input_file.strpath, '-o', output_file.strpath])
     # then
     assert arguments.sub_command == 'extract'
     assert not arguments.verbose
-    assert arguments.input.name == input.strpath
-    assert arguments.output.name == output.strpath
+    assert arguments.input.name == input_file.strpath
+    assert arguments.output.name == output_file.strpath
 
 
 def test_extract_help_for_missing_input(capsys, tmpdir):
@@ -93,21 +93,21 @@ def test_extract_help_for_missing_input(capsys, tmpdir):
         parse_args(['extract', '-o', output.strpath])
     # then
     captured = capsys.readouterr().err
-    assert re.search(r'usage: swatch extract \[-h\] -i INPUT -o OUTPUT \[-v\]', captured)
+    assert re.search(r'usage: swatch extract \[-h] -i INPUT -o OUTPUT \[-v]', captured)
     assert re.search(r'swatch extract: error: the following arguments are required: -i/--input', captured)
 
 
 def test_extract_help_for_missing_output(capsys, tmpdir):
     # given
-    input = tmpdir.join('in.aco')
-    input.write_binary(b'Binary file contents')
+    input_file = tmpdir.join('in.aco')
+    input_file.write_binary(b'Binary file contents')
 
     # when
     with pytest.raises(SystemExit):
-        parse_args(['extract', '-i', input.strpath])
+        parse_args(['extract', '-i', input_file.strpath])
     # then
     captured = capsys.readouterr().err
-    assert re.search(r'usage: swatch extract \[-h\] -i INPUT -o OUTPUT \[-v\]', captured)
+    assert re.search(r'usage: swatch extract \[-h] -i INPUT -o OUTPUT \[-v]', captured)
     assert re.search(r'swatch extract: error: the following arguments are required: -o/--output', captured)
 
 
@@ -118,7 +118,7 @@ def test_help_for_generate_with_no_args(capsys):
         parse_args(['generate'])
     # then
     captured = capsys.readouterr().err
-    assert re.search(r'usage: swatch generate \[-h\] -i INPUT -o OUTPUT \[-v\]', captured)
+    assert re.search(r'usage: swatch generate \[-h] -i INPUT -o OUTPUT \[-v]', captured)
     assert re.search(r'swatch generate: error: the following arguments are required: -i/--input, -o/--output', captured)
 
 
@@ -128,37 +128,37 @@ def test_help_for_generate_with_h(capsys):
         parse_args(['generate', '-h'])
     captured = capsys.readouterr().out
     assert re.search(r'Generate \.aco output file based on \.csv input file', captured)
-    assert re.search(r'usage: swatch generate \[-h\] -i INPUT -o OUTPUT \[-v\]', captured)
+    assert re.search(r'usage: swatch generate \[-h] -i INPUT -o OUTPUT \[-v]', captured)
 
 
 def test_generate_success_with_verbose(tmpdir):
     # given
-    input = tmpdir.join('in.csv')
-    input.write('Text file contents')
-    output = tmpdir.join('out.aco')
+    input_file = tmpdir.join('in.csv')
+    input_file.write('Text file contents')
+    output_file = tmpdir.join('out.aco')
 
     # when
-    _, arguments = parse_args(['generate', '-i', input.strpath, '-o', output.strpath, '-v'])
+    _, arguments = parse_args(['generate', '-i', input_file.strpath, '-o', output_file.strpath, '-v'])
     # then
     assert arguments.sub_command == 'generate'
     assert arguments.verbose
-    assert arguments.input.name == input.strpath
-    assert arguments.output.name == output.strpath
+    assert arguments.input.name == input_file.strpath
+    assert arguments.output.name == output_file.strpath
 
 
 def test_generate_success_without_verbose(tmpdir):
     # given
-    input = tmpdir.join('in.csv')
-    input.write('Text file contents')
-    output = tmpdir.join('out.aco')
+    input_file = tmpdir.join('in.csv')
+    input_file.write('Text file contents')
+    output_file = tmpdir.join('out.aco')
 
     # when
-    _, arguments = parse_args(['generate', '-i', input.strpath, '-o', output.strpath])
+    _, arguments = parse_args(['generate', '-i', input_file.strpath, '-o', output_file.strpath])
     # then
     assert arguments.sub_command == 'generate'
     assert not arguments.verbose
-    assert arguments.input.name == input.strpath
-    assert arguments.output.name == output.strpath
+    assert arguments.input.name == input_file.strpath
+    assert arguments.output.name == output_file.strpath
 
 
 def test_generate_help_for_missing_input(capsys, tmpdir):
@@ -170,19 +170,19 @@ def test_generate_help_for_missing_input(capsys, tmpdir):
         parse_args(['generate', '-o', output.strpath])
     # then
     captured = capsys.readouterr().err
-    assert re.search(r'usage: swatch generate \[-h\] -i INPUT -o OUTPUT \[-v\]', captured)
+    assert re.search(r'usage: swatch generate \[-h] -i INPUT -o OUTPUT \[-v]', captured)
     assert re.search(r'swatch generate: error: the following arguments are required: -i/--input', captured)
 
 
 def test_generate_help_for_missing_output(capsys, tmpdir):
     # given
-    input = tmpdir.join('in.csv')
-    input.write('Text file contents')
+    input_file = tmpdir.join('in.csv')
+    input_file.write('Text file contents')
 
     # when
     with pytest.raises(SystemExit):
-        parse_args(['generate', '-i', input.strpath])
+        parse_args(['generate', '-i', input_file.strpath])
     # then
     captured = capsys.readouterr().err
-    assert re.search(r'usage: swatch generate \[-h\] -i INPUT -o OUTPUT \[-v\]', captured)
+    assert re.search(r'usage: swatch generate \[-h] -i INPUT -o OUTPUT \[-v]', captured)
     assert re.search(r'swatch generate: error: the following arguments are required: -o/--output', captured)
