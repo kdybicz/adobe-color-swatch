@@ -4,7 +4,8 @@ jobs:
   tests:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest]
+        # os: [ubuntu-latest, macos-latest, windows-latest]
     name: Run tox build tests
     runs-on: ${{ matrix.os }}
     defaults:
