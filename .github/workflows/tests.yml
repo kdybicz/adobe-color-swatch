@@ -13,39 +13,20 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      - uses: conda-incubator/setup-miniconda@v2
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
         with:
-          miniconda-version: latest
-          python-version: 3.9
-          activate-environment: testenv
-          channels: conda-forge
+          cache: 'pip'
+          python-version: |
+              3.7
+              3.8
+              3.9
+              3.10
 
-      - name: Setup conda python environments
-        run: |
-          conda config --set always_yes yes --set changeps1 no
-          conda install -q -c conda-forge tox
-          conda create -q -n py37 python=3.7
-          conda create -q -n py38 python=3.8
-          conda create -q -n py310 python=3.10
+      - name: Install tox
+        run: python3 -m pip install -U tox
 
-      - name: Run tox
-        run: |
-          export PY37_PATH=$CONDA/envs/py37/bin
-          export PY38_PATH=$CONDA/envs/py38/bin
-          export PY310_PATH=$CONDA/envs/py310/bin
-          export PATH=$PATH:$PY37_PATH:$PY38_PATH:$PY310_PATH
-          tox
-
-      # - name: Setup Python ${{ matrix.python-version }}
-      #   uses: actions/setup-python@v2
-      #   with:
-      #     python-version: ${{ matrix.python-version }}
-
-      # - name: Install tox
-      #   run: |
-      #     python -m pip install -U tox
-
-      # - name: Running tox
-      #   run: python -m tox
+      - name: Running tox
+        run: python3 -m tox
