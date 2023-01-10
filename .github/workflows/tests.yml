@@ -4,7 +4,6 @@ jobs:
   tests:
     strategy:
       matrix:
-        # os: [ubuntu-latest, windows-latest]
         os: [ubuntu-latest, macos-latest, windows-latest]
     name: Run tox build tests
     runs-on: ${{ matrix.os }}
@@ -15,29 +14,6 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
-
-      # - uses: conda-incubator/setup-miniconda@v2
-      #   with:
-      #     miniconda-version: latest
-      #     python-version: 3.9
-      #     activate-environment: testenv
-      #     channels: conda-forge
-
-      # - name: Setup conda python environments
-      #   run: |
-      #     conda config --set always_yes yes --set changeps1 no
-      #     conda install -q -c conda-forge tox
-      #     conda create -q -n py37 python=3.7
-      #     conda create -q -n py38 python=3.8
-      #     conda create -q -n py310 python=3.10
-
-      # - name: Run tox
-      #   run: |
-      #     export PY37_PATH=$CONDA/envs/py37/bin
-      #     export PY38_PATH=$CONDA/envs/py38/bin
-      #     export PY310_PATH=$CONDA/envs/py310/bin
-      #     export PATH=$PATH:$PY37_PATH:$PY38_PATH:$PY310_PATH
-      #     tox
 
       - name: Setup Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
